@@ -60,30 +60,35 @@ Amin, Amax = 25.0, 900.0  # scatter 's' argument is area in points^2
 hp_norm = (hp - hp_min) / (hp_max - hp_min + 1e-9)
 sizes = Amin + hp_norm * (Amax - Amin)
 
-# Shape -> cylinders (nominal/ordered)
-# Map distinct cylinder counts to distinct markers (separable with color & size).
-cyl_markers = {
-    3: "^",  # triangle_up
-    4: "o",  # circle
-    5: "s",  # square
-    6: "D",  # diamond
-    8: "X"   # x-filled
+# Shape -> origin (nominal)
+# Different shapes for each origin
+origin_markers = {
+    'US': '*',      # star
+    'Europe': 's',  # square
+    'Japan': 'o'    # circle
 }
-# Default fallback
-def marker_for_cyl(c):
-    return cyl_markers.get(int(c), "o")
 
-markers = [marker_for_cyl(c) for c in df["cylinders"].values]
+def marker_for_origin(o):
+    return origin_markers.get(str(o), "o")
 
-# Hue (facecolor) -> origin (VIBRANT COLOR PALETTE)
 origins = df["origin"].astype(str)
 origin_levels = list(pd.Categorical(origins).categories)
-# Vibrant color palette
-origin_palette = {
-    'Europe': '#0077bb',  # Vibrant blue
-    'Japan': '#ee7733',   # Vibrant orange
-    'US': '#009988'       # Vibrant teal
+
+# Color (facecolor) -> cylinders (ordered - sequential color scale)
+# Map cylinders to colors - darker as more cylinders
+unique_cyls = sorted(df["cylinders"].dropna().unique())
+# Create a blue-green sequential palette (lighter to darker)
+from matplotlib.colors import LinearSegmentedColormap
+cyl_colors = {
+    3: '#a8e6cf',  # Lightest green
+    4: '#56c596',  # Light green
+    5: '#2a9d8f',  # Medium teal
+    6: '#1b6b7f',  # Dark teal
+    8: '#0d3b4f'   # Darkest blue-green
 }
+
+def color_for_cyl(c):
+    return cyl_colors.get(int(c), '#2a9d8f')
 
 # Year (ordered) -> lightness on the marker EDGE using a grayscale ramp
 yr = df["year_full"].values.astype(float)
@@ -108,33 +113,39 @@ ax = plt.axes([0.06, 0.15, 0.70, 0.70])  # [left, bottom, width, height]
 all_scatter_objects = []
 model_names = []
 
-# Plot by origin (for legend color patches) while preserving per-point shape/size/edge lightness
+# Plot by origin (for shape) and cylinders (for color)
 for orig in origin_levels:
     subset = df[origins == orig]
     if subset.empty:
         continue
-    idx = subset.index
-    # Build arrays for this subset
-    ms = [marker_for_cyl(c) for c in subset["cylinders"].values]
-    ss = sizes[idx]
-    ec = [year_cmap(v) for v in ((subset["year_full"].values.astype(float) - yr_min) / (yr_max - yr_min + 1e-9))]
-    # Facecolor fixed by origin (hue); edge color carries year (lightness)
-    fc = origin_palette[orig]
     
-    # Group by marker type to reduce number of scatter calls
-    for marker_type in set(ms):
-        mask = [m == marker_type for m in ms]
-        if not any(mask):
+    # Get the marker for this origin
+    marker = marker_for_origin(orig)
+    
+    # Now group by cylinders to get colors
+    for cyl_val in sorted(subset["cylinders"].dropna().unique()):
+        cyl_subset = subset[subset["cylinders"] == cyl_val]
+        if cyl_subset.empty:
             continue
         
-        sub_x = subset["weight"].values[mask]
-        sub_y = subset["mpg"].values[mask]
-        sub_s = ss[mask]
-        sub_ec = np.array([ec[i] for i in range(len(ec)) if mask[i]])
-        sub_models = subset["model"].astype(str).values[mask]
+        idx = cyl_subset.index
         
-        sc = ax.scatter(sub_x, sub_y, s=sub_s, marker=marker_type, 
-                       facecolor=fc, edgecolor=sub_ec, linewidth=0.9, alpha=0.9)
+        # Get color for this cylinder count
+        fc = color_for_cyl(cyl_val)
+        
+        # Get sizes for this subset
+        ss = sizes[idx]
+        
+        # Get edge colors for year
+        ec = [year_cmap(v) for v in ((cyl_subset["year_full"].values.astype(float) - yr_min) / (yr_max - yr_min + 1e-9))]
+        
+        # Get data
+        sub_x = cyl_subset["weight"].values
+        sub_y = cyl_subset["mpg"].values
+        sub_models = cyl_subset["model"].astype(str).values
+        
+        sc = ax.scatter(sub_x, sub_y, s=ss, marker=marker, 
+                       facecolor=fc, edgecolor=ec, linewidth=0.9, alpha=0.9)
         all_scatter_objects.append(sc)
         # Store model names for this scatter object
         model_names.append(sub_models.tolist())
@@ -178,7 +189,7 @@ cursor = mplcursors.cursor(all_scatter_objects, hover=True)
 cursor.connect("add", make_annotation_func(all_scatter_objects, model_names))
 
 # Axes labels & title
-ax.set_xlabel("Vehicle weight", labelpad=6, fontsize=15, fontweight='bold')
+ax.set_xlabel("Vehicle weight (pounds)", labelpad=6, fontsize=15, fontweight='bold')
 ax.set_ylabel("Fuel efficiency (MPG)", labelpad=6, fontsize=15, fontweight='bold')
 
 # Make tick labels bigger
@@ -214,29 +225,35 @@ legend_style = {
 # Calculate positions with proper spacing
 legend_top = 0.69  # Top position for first legend
 
-# 1. Origin legend - Top
-origin_handles = [Patch(facecolor=origin_palette[o], edgecolor="#333333", linewidth=0.5) 
+# 1. Origin legend - Top (now shapes)
+# Adjust marker sizes so they appear visually similar
+marker_sizes = {
+    'Europe': 12,  # square
+    'Japan': 13,   # circle (slightly bigger)
+    'US': 17       # star (needs to be bigger to appear same size)
+}
+origin_handles = [Line2D([0], [0], marker=origin_markers[o], color="none",
+                        markerfacecolor="#666666", markeredgecolor="#333333",
+                        markersize=marker_sizes.get(o, 12), linewidth=0)
                   for o in origin_levels]
 origin_y = legend_top
 origin_ax = fig.add_axes([legend_x, origin_y, legend_width, legend_height])
 origin_ax.axis('off')
-leg1 = origin_ax.legend(origin_handles, origin_levels, title="Origin (hue)", 
+leg1 = origin_ax.legend(origin_handles, origin_levels, title="Origin (shape)", 
                         loc='lower left', mode='expand', ncol=1,
                         bbox_to_anchor=(0, 0, 1, 1),
                         **legend_style)
 leg1.get_title().set_fontweight('bold')
 
-# 2. Cylinders legend - Middle  
+# 2. Cylinders legend - Middle (now colors)
 unique_cyl = sorted(df["cylinders"].dropna().astype(int).unique())
-shape_handles = [Line2D([0], [0], marker=marker_for_cyl(c), color="none",
-                        markerfacecolor="#666666", markeredgecolor="#333333",
-                        markersize=12, linewidth=0)
-                 for c in unique_cyl]
+cyl_handles = [Patch(facecolor=cyl_colors[c], edgecolor="#333333", linewidth=0.5)
+               for c in unique_cyl]
 cylinders_y = origin_y - legend_height - legend_gap
 cylinders_ax = fig.add_axes([legend_x, cylinders_y, legend_width, legend_height])
 cylinders_ax.axis('off')
-leg2 = cylinders_ax.legend(shape_handles, [f"{c} cylinders" for c in unique_cyl], 
-                           title="Cylinders (shape)", loc='lower left', mode='expand', ncol=1,
+leg2 = cylinders_ax.legend(cyl_handles, [f"{c} cyl" for c in unique_cyl], 
+                           title="Cylinders (value)", loc='lower left', mode='expand', ncol=1,
                            bbox_to_anchor=(0, 0, 1, 1),
                            **legend_style)
 leg2.get_title().set_fontweight('bold')
