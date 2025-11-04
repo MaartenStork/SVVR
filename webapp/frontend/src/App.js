@@ -27,8 +27,21 @@ function App() {
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected to server');
+      console.log('✅ Connected to server');
       setStatusMessage('Connected to simulation server');
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('🔌 Disconnected:', reason);
+      if (isRunning) {
+        setStatusMessage('⚠️ Connection lost during simulation. Please try again.');
+        setIsRunning(false);
+      }
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error);
+      setStatusMessage('Connection error. Retrying...');
     });
 
     newSocket.on('simulation_started', (data) => {
@@ -40,6 +53,7 @@ function App() {
     });
 
     newSocket.on('simulation_progress', (data) => {
+      console.log(`📊 Progress - Sim ${data.sim_index}: ${data.progress}% (Iteration ${data.iteration}/${data.max_iters})`);
       setProgress(prev => {
         const newProgress = [...prev];
         newProgress[data.sim_index] = data.progress;
