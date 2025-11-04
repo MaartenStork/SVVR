@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import io from 'socket.io-client';
 import WelcomeScreen from './components/WelcomeScreen';
 import SimulationView from './components/SimulationView';
