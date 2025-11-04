@@ -24,11 +24,11 @@ if os.path.exists(model_path):
 sys.path.insert(0, model_path)
 
 try:
-    import code as jacobi_sim
-    print(f"Successfully imported code module")
-    print(f"Available functions: {[attr for attr in dir(jacobi_sim) if not attr.startswith('_')]}")
+    import jacobi_solver as jacobi_sim
+    print(f"Successfully imported jacobi_solver module")
+    print(f"Available functions: {[attr for attr in dir(jacobi_sim) if not attr.startswith('_')][:10]}")  # Show first 10
 except Exception as e:
-    print(f"Error importing code module: {e}")
+    print(f"Error importing jacobi_solver module: {e}")
     raise
 
 # Configure Flask to serve React build folder

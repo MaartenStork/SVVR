@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from PIL import Image
 
-# Import the main simulation from code.py
-import code as jacobi_sim
+# Import the main simulation from jacobi_solver.py
+import jacobi_solver as jacobi_sim
 
 def run_experiment(hot_fractions, output_dir="experiment_results"):
     """
