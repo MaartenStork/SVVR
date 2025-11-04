@@ -60,37 +60,24 @@ def frame_to_base64(frame_array):
     return f"data:image/png;base64,{img_str}"
 
 def run_simulation_with_streaming(hot_fraction, sim_index, total_sims):
-    """Run a single simulation and stream progress"""
-    # Temporarily modify sys.argv
-    original_argv = sys.argv.copy()
-    
-    output_dir = f"webapp_temp/sim_{hot_fraction:.2f}"
-    sys.argv = [
-        'code.py',
-        '--output-every', '100',
-        '--out', output_dir,
-        '--hot-fraction', str(hot_fraction),
-        '--no-vtk',  # We'll add this flag to skip VTK writing for speed
-    ]
-    
-    # Run simulation with custom callback for streaming
+    """Run a single simulation and stream progress - NO FILE WRITING!"""
+    # Run simulation directly in memory - NO VTK FILES
     try:
         result = run_simulation_streaming(hot_fraction, sim_index, total_sims)
-        sys.argv = original_argv
         return result
     except Exception as e:
-        sys.argv = original_argv
+        print(f"Error in simulation {sim_index}: {e}")
         raise e
 
 def run_simulation_streaming(hot_fraction, sim_index, total_sims):
     """Modified simulation runner that streams data via WebSocket"""
     from pathlib import Path
     
-    # Simulation parameters (hardcoded for webapp)
-    nx, ny = 181, 181
+    # Simulation parameters (hardcoded for webapp - reduced for speed)
+    nx, ny = 91, 91  # Smaller grid for faster computation
     tol = 1e-3
     max_iters = 20000
-    output_every = 100
+    output_every = 100  # Update less frequently for faster streaming
     
     W, H = 9.0, 9.0
     dx = W / (nx - 1)
@@ -127,8 +114,10 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
     convergence_history = {"iterations": [], "deltas": []}
     
     # Send initial frame (reduce DPI for smaller file size)
-    frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=40)
+    frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=30)
     frame_base64 = frame_to_base64(frame)
+    
+    print(f"Sim {sim_index}: Starting with {nx}x{ny} grid")
     
     socketio.emit('simulation_update', {
         'sim_index': sim_index,
@@ -149,8 +138,10 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
         
         # Stream progress at intervals
         if step % output_every == 0 or delta <= tol:
-            frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=40)
+            frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=30)
             frame_base64 = frame_to_base64(frame)
+            
+            print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}")  # Debug log
             
             socketio.emit('simulation_update', {
                 'sim_index': sim_index,
@@ -162,7 +153,7 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
             }, namespace='/')
             
             # Longer sleep to prevent overwhelming the connection
-            socketio.sleep(0.1)
+            socketio.sleep(0.2)
     
     return {
         'convergence_history': convergence_history,
@@ -219,38 +210,40 @@ def handle_start_simulation(data):
         'num_simulations': len(hot_fractions)
     })
     
-    # Run simulations in separate thread
-    def run_all_simulations():
+    # Run simulations in PARALLEL threads for speed!
+    def run_single_simulation(fraction, idx):
         try:
-            results = []
-            for idx, fraction in enumerate(hot_fractions):
-                socketio.emit('simulation_status', {
-                    'message': f'Running simulation {idx + 1}/{len(hot_fractions)}',
-                    'current_sim': idx,
-                    'total_sims': len(hot_fractions)
-                })
-                
-                result = run_simulation_streaming(fraction, idx, len(hot_fractions))
-                results.append(result)
-            
-            simulation_state['results'] = results
-            simulation_state['running'] = False
-            
-            socketio.emit('all_simulations_complete', {
-                'message': 'All simulations completed',
-                'results': [{
-                    'hot_fraction': r['hot_fraction'],
-                    'final_iter': r['final_iter'],
-                    'final_delta': r['final_delta']
-                } for r in results]
+            socketio.emit('simulation_status', {
+                'message': f'Running simulation {idx + 1}/{len(hot_fractions)}',
+                'current_sim': idx,
+                'total_sims': len(hot_fractions)
             })
+            
+            result = run_simulation_streaming(fraction, idx, len(hot_fractions))
+            simulation_state['results'].append(result)
+            
+            # Check if all simulations are done
+            if len(simulation_state['results']) == len(hot_fractions):
+                simulation_state['running'] = False
+                socketio.emit('all_simulations_complete', {
+                    'message': 'All simulations completed',
+                    'results': [{
+                        'hot_fraction': r['hot_fraction'],
+                        'final_iter': r['final_iter'],
+                        'final_delta': r['final_delta']
+                    } for r in simulation_state['results']]
+                })
         except Exception as e:
             simulation_state['running'] = False
             socketio.emit('error', {'message': str(e)})
     
-    thread = threading.Thread(target=run_all_simulations)
-    thread.daemon = True
-    thread.start()
+    # Start ALL simulations in parallel
+    threads = []
+    for idx, fraction in enumerate(hot_fractions):
+        thread = threading.Thread(target=run_single_simulation, args=(fraction, idx))
+        thread.daemon = True
+        thread.start()
+        threads.append(thread)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
