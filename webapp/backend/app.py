@@ -19,7 +19,9 @@ import threading
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../model'))
 import code as jacobi_sim
 
-app = Flask(__name__)
+# Configure Flask to serve React build folder
+build_folder = os.path.join(os.path.dirname(__file__), '../frontend/build')
+app = Flask(__name__, static_folder=build_folder, static_url_path='')
 CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
@@ -153,6 +155,21 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy'}), 200
+
+@app.route('/')
+def serve_react_app():
+    """Serve React app"""
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def serve_react_routes(path):
+    """Serve React app for all routes (for React Router)"""
+    # Check if path is a file that exists
+    file_path = os.path.join(app.static_folder, path)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return app.send_static_file(path)
+    # Otherwise serve index.html for React Router
+    return app.send_static_file('index.html')
 
 @socketio.on('connect')
 def handle_connect():

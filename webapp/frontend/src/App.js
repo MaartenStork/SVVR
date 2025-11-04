@@ -5,7 +5,8 @@ import WelcomeScreen from './components/WelcomeScreen';
 import SimulationView from './components/SimulationView';
 import './App.css';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+// Connect to same origin (backend serves the frontend)
+const BACKEND_URL = window.location.origin;
 
 function App() {
   const [socket, setSocket] = useState(null);
