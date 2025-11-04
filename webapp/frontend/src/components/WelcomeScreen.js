@@ -72,8 +72,10 @@ function WelcomeScreen({ onStart }) {
         <form onSubmit={handleSubmit}>
           <div className="fraction-inputs">
             <div className="input-group">
-              <label>Simulation 1 (Small):</label>
+              <label htmlFor="fraction1">Simulation 1 (Small):</label>
               <input
+                id="fraction1"
+                name="fraction1"
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -85,8 +87,10 @@ function WelcomeScreen({ onStart }) {
             </div>
             
             <div className="input-group">
-              <label>Simulation 2 (Medium):</label>
+              <label htmlFor="fraction2">Simulation 2 (Medium):</label>
               <input
+                id="fraction2"
+                name="fraction2"
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -98,8 +102,10 @@ function WelcomeScreen({ onStart }) {
             </div>
             
             <div className="input-group">
-              <label>Simulation 3 (Large):</label>
+              <label htmlFor="fraction3">Simulation 3 (Large):</label>
               <input
+                id="fraction3"
+                name="fraction3"
                 type="number"
                 step="0.01"
                 min="0.01"
@@ -148,8 +154,10 @@ function WelcomeScreen({ onStart }) {
               
               <div className="fraction-inputs">
                 <div className="input-group">
-                  <label>Grid Size (NxN):</label>
+                  <label htmlFor="gridSize">Grid Size (NxN):</label>
                   <input
+                    id="gridSize"
+                    name="gridSize"
                     type="number"
                     min="21"
                     max="181"
@@ -161,8 +169,10 @@ function WelcomeScreen({ onStart }) {
                 </div>
                 
                 <div className="input-group">
-                  <label>Tolerance:</label>
+                  <label htmlFor="tolerance">Tolerance:</label>
                   <input
+                    id="tolerance"
+                    name="tolerance"
                     type="number"
                     min="0.001"
                     max="0.01"
@@ -174,8 +184,10 @@ function WelcomeScreen({ onStart }) {
                 </div>
                 
                 <div className="input-group">
-                  <label>Max Iterations:</label>
+                  <label htmlFor="maxIters">Max Iterations:</label>
                   <input
+                    id="maxIters"
+                    name="maxIters"
                     type="number"
                     min="1000"
                     max="20000"
@@ -187,8 +199,10 @@ function WelcomeScreen({ onStart }) {
                 </div>
                 
                 <div className="input-group">
-                  <label>Frame Every N Iters:</label>
+                  <label htmlFor="frameEvery">Frame Every N Iters:</label>
                   <input
+                    id="frameEvery"
+                    name="frameEvery"
                     type="number"
                     min="50"
                     max="500"

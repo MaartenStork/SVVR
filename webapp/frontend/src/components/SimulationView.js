@@ -127,29 +127,17 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
               <br/><strong>"Does hot-square size affect solve difficulty?"</strong>
             </p>
             
-            <div style={{
-              width: '100%',
-              height: '500px',
-              background: 'white',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#333',
-              fontSize: '1.1rem',
-              padding: '2rem',
-              textAlign: 'center',
-              lineHeight: '1.8'
-            }}>
-              <div>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
-                <p><strong>Expected Finding:</strong></p>
-                <p>Larger hot squares will converge<br/>significantly FASTER than smaller ones!</p>
-                <p style={{ marginTop: '1.5rem', fontSize: '0.95rem', opacity: 0.7 }}>
-                  (Upload a PDF to /public/report.pdf to display it here)
-                </p>
-              </div>
-            </div>
+            <iframe 
+              src="/report.pdf" 
+              width="100%" 
+              height="500px"
+              style={{
+                borderRadius: '10px',
+                border: 'none',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+              }}
+              title="Research Report"
+            />
           </div>
         </div>
       ) : results ? (
