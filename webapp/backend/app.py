@@ -126,8 +126,8 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
     delta = float("inf")
     convergence_history = {"iterations": [], "deltas": []}
     
-    # Send initial frame
-    frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60)
+    # Send initial frame (reduce DPI for smaller file size)
+    frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=40)
     frame_base64 = frame_to_base64(frame)
     
     socketio.emit('simulation_update', {
@@ -137,7 +137,7 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
         'frame': frame_base64,
         'hot_fraction': hot_fraction,
         'converged': False
-    })
+    }, namespace='/')
     
     while delta > tol and step < max_iters:
         delta = jacobi_sim.jacobi_step(T_old, T_new, fixed)
@@ -149,7 +149,7 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
         
         # Stream progress at intervals
         if step % output_every == 0 or delta <= tol:
-            frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60)
+            frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=40)
             frame_base64 = frame_to_base64(frame)
             
             socketio.emit('simulation_update', {
@@ -159,10 +159,10 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
                 'frame': frame_base64,
                 'hot_fraction': hot_fraction,
                 'converged': delta <= tol
-            })
+            }, namespace='/')
             
-            # Small sleep to prevent overwhelming the client
-            socketio.sleep(0.01)
+            # Longer sleep to prevent overwhelming the connection
+            socketio.sleep(0.1)
     
     return {
         'convergence_history': convergence_history,

@@ -32,6 +32,7 @@ function App() {
     });
 
     newSocket.on('simulation_update', (data) => {
+      console.log('Received simulation_update:', data.sim_index, 'iteration:', data.iteration);
       const { sim_index, iteration, delta, frame, hot_fraction, converged } = data;
       
       // Update simulation frame
