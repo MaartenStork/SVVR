@@ -21,9 +21,11 @@ function App() {
     const newSocket = io(BACKEND_URL, {
       transports: ['polling', 'websocket'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 10000
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      timeout: 60000,  // 60 seconds timeout
+      pingTimeout: 120000,  // 2 minutes before considering connection dead
+      pingInterval: 30000  // Ping every 30 seconds
     });
 
     newSocket.on('connect', () => {
