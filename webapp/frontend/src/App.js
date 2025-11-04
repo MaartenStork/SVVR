@@ -33,10 +33,8 @@ function App() {
 
     newSocket.on('disconnect', (reason) => {
       console.log('🔌 Disconnected:', reason);
-      if (isRunning) {
-        setStatusMessage('⚠️ Connection lost during simulation. Please try again.');
-        setIsRunning(false);
-      }
+      setStatusMessage('⚠️ Connection lost. Reconnecting...');
+      setIsRunning(false);
     });
 
     newSocket.on('connect_error', (error) => {
