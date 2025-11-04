@@ -8,7 +8,7 @@ function WelcomeScreen({ onStart }) {
   
   // Advanced options
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [gridSize, setGridSize] = useState(91);
+  const [gridSize, setGridSize] = useState(51);
   const [tolerance, setTolerance] = useState(0.001);
   const [maxIters, setMaxIters] = useState(15000);
   const [frameEvery, setFrameEvery] = useState(100);
@@ -215,8 +215,8 @@ function WelcomeScreen({ onStart }) {
               </div>
               
               <p style={{ fontSize: '0.85rem', marginTop: '1rem', opacity: 0.6, textAlign: 'left' }}>
-                💡 <strong>Tip:</strong> Defaults (91x91, tol=0.001) run until proper convergence (~2-3 min). 
-                For speed: 51x51 + tol=0.005 (~30 sec). For quality: 181x181 + tol=0.001 (~8-10 min).
+                💡 <strong>Tip:</strong> Defaults (51x51, tol=0.001) run until proper convergence (~1-2 min). 
+                For quality: 91x91 + tol=0.001 (~3-4 min). For research: 181x181 + tol=0.001 (~8-10 min).
               </p>
             </motion.div>
           )}

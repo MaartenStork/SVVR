@@ -110,8 +110,8 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             
             <p style={{ fontSize: '1rem', marginTop: '2rem', opacity: 0.8, lineHeight: '1.6' }}>
               ⚡ All three simulations are running in parallel.<br/>
-              ⏱️ This may take 2-5 minutes depending on settings.<br/>
-              📊 Results will appear when all simulations complete.
+              ⏱️ Default settings: ~1-2 minutes. High quality: ~3-10 minutes.<br/>
+              📊 Progress bars update every second based on convergence!
             </p>
           </div>
 

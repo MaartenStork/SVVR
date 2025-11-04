@@ -4,6 +4,10 @@ Flask backend for Jacobi Heat Simulation Web App
 Real-time streaming of simulation progress via WebSocket
 """
 
+# Monkey patch for eventlet to enable true threading
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -48,7 +52,8 @@ socketio = SocketIO(
 # Global state for simulation
 simulation_state = {
     'running': False,
-    'results': []
+    'results': [],
+    'progress': [0, 0, 0]  # Track progress for each simulation
 }
 
 def frame_to_base64(frame_array):
@@ -86,7 +91,7 @@ def run_simulation_with_streaming(hot_fraction, sim_index, total_sims):
         print(f"Error in simulation {sim_index}: {e}")
         raise e
 
-def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, tolerance=0.001, max_iters=15000, frame_every=100):
+def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, tolerance=0.001, max_iters=15000, frame_every=100):
     """Modified simulation runner that streams data via WebSocket"""
     from pathlib import Path
     
@@ -167,14 +172,8 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, 
             else:
                 progress = int((step / max_iters) * 100)
             
-            socketio.emit('simulation_progress', {
-                'sim_index': sim_index,
-                'iteration': step,
-                'progress': progress,
-                'delta': delta,
-                'initial_delta': initial_delta,
-                'tolerance': tol
-            }, namespace='/')
+            # Update global progress state (will be broadcast by monitoring thread)
+            simulation_state['progress'][sim_index] = progress
             
             if step % 500 == 0:  # Progress log every 500 iterations
                 print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}, Progress {progress}%")
@@ -230,7 +229,7 @@ def handle_start_simulation(data):
     
     # Extract parameters from client
     hot_fractions = data.get('hot_fractions', [0.1, 0.2, 0.33])
-    grid_size = data.get('grid_size', 91)
+    grid_size = data.get('grid_size', 51)
     tolerance = data.get('tolerance', 0.001)
     max_iters = data.get('max_iters', 15000)
     frame_every = data.get('frame_every', 100)
@@ -239,11 +238,23 @@ def handle_start_simulation(data):
     
     simulation_state['running'] = True
     simulation_state['results'] = []
+    simulation_state['progress'] = [0, 0, 0]
     
     emit('simulation_started', {
         'message': 'Starting simulations',
         'num_simulations': len(hot_fractions)
     })
+    
+    # Progress monitoring - broadcasts progress every second
+    def monitor_progress():
+        while simulation_state['running']:
+            socketio.emit('simulation_progress', {
+                'progress': simulation_state['progress']
+            }, namespace='/')
+            eventlet.sleep(1)  # Update every second
+    
+    # Start monitor in eventlet greenlet
+    eventlet.spawn(monitor_progress)
     
     # Run ALL simulations in PARALLEL!
     results = [None] * len(hot_fractions)
@@ -305,13 +316,13 @@ def handle_start_simulation(data):
             socketio.emit('error', {'message': str(e)}, namespace='/')
             print(f"Error in simulation {idx}: {e}")
     
-    # Start ALL simulations in PARALLEL threads
-    threads = []
+    # Start ALL simulations in PARALLEL using eventlet
+    greenlets = []
     for idx, fraction in enumerate(hot_fractions):
-        thread = threading.Thread(target=run_single_simulation, args=(fraction, idx))
-        thread.daemon = True
-        thread.start()
-        threads.append(thread)
+        greenlet = eventlet.spawn(run_single_simulation, fraction, idx)
+        greenlets.append(greenlet)
+    
+    print(f"Started {len(greenlets)} simulations in parallel with eventlet")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

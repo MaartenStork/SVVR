@@ -53,12 +53,11 @@ function App() {
     });
 
     newSocket.on('simulation_progress', (data) => {
-      console.log(`📊 Progress - Sim ${data.sim_index}: ${data.progress}% (Iteration ${data.iteration}/${data.max_iters})`);
-      setProgress(prev => {
-        const newProgress = [...prev];
-        newProgress[data.sim_index] = data.progress;
-        return newProgress;
-      });
+      // Receive all progress values at once
+      if (data.progress && Array.isArray(data.progress)) {
+        console.log(`📊 Progress: [${data.progress.join('%, ')}%]`);
+        setProgress(data.progress);
+      }
     });
 
     newSocket.on('all_simulations_complete', (data) => {
