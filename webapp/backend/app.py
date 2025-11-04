@@ -86,7 +86,7 @@ def run_simulation_with_streaming(hot_fraction, sim_index, total_sims):
         print(f"Error in simulation {sim_index}: {e}")
         raise e
 
-def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, tolerance=0.005, max_iters=5000, frame_every=100):
+def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, tolerance=0.001, max_iters=15000, frame_every=100):
     """Modified simulation runner that streams data via WebSocket"""
     from pathlib import Path
     
@@ -151,19 +151,15 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, 
             if step % 500 == 0:  # Progress log every 500 iterations
                 print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}")
     
-    # Generate GIF from collected frames
-    print(f"Sim {sim_index}: Complete! Generating GIF with {len(frames)} frames...")
-    gif_bytes = generate_gif(frames, fps=10)
-    gif_base64 = base64.b64encode(gif_bytes).decode()
-    
-    print(f"Sim {sim_index}: Done! {step} iterations, GIF ready")
+    # Return frames (GIF will be generated after synchronization)
+    print(f"Sim {sim_index}: Complete! {step} iterations, {len(frames)} frames collected")
     
     return {
         'convergence_history': convergence_history,
         'final_iter': step,
         'final_delta': delta,
         'hot_fraction': hot_fraction,
-        'gif_data': f"data:image/gif;base64,{gif_base64}"
+        'frames': frames  # Return frames, not GIF yet
     }
 
 @app.route('/health', methods=['GET'])
@@ -206,9 +202,9 @@ def handle_start_simulation(data):
     
     # Extract parameters from client
     hot_fractions = data.get('hot_fractions', [0.1, 0.2, 0.33])
-    grid_size = data.get('grid_size', 51)
-    tolerance = data.get('tolerance', 0.005)
-    max_iters = data.get('max_iters', 5000)
+    grid_size = data.get('grid_size', 91)
+    tolerance = data.get('tolerance', 0.001)
+    max_iters = data.get('max_iters', 15000)
     frame_every = data.get('frame_every', 100)
     
     print(f"Starting simulations with grid={grid_size}x{grid_size}, tol={tolerance}, max_iters={max_iters}")
@@ -235,6 +231,20 @@ def handle_start_simulation(data):
                 results[idx] = result
                 # Check if all simulations are done
                 if all(r is not None for r in results):
+                    # Synchronize GIF lengths - pad shorter ones with last frame
+                    max_frames = max(len(r['frames']) for r in results)
+                    print(f"Synchronizing GIFs: max {max_frames} frames")
+                    
+                    for r in results:
+                        while len(r['frames']) < max_frames:
+                            r['frames'].append(r['frames'][-1])  # Duplicate last frame
+                    
+                    # Generate synchronized GIFs
+                    for r in results:
+                        gif_bytes = generate_gif(r['frames'], fps=5)  # Slower FPS for better viewing
+                        r['gif_data'] = f"data:image/gif;base64,{base64.b64encode(gif_bytes).decode()}"
+                        del r['frames']  # Free memory
+                    
                     simulation_state['results'] = results
                     simulation_state['running'] = False
                     
@@ -249,7 +259,7 @@ def handle_start_simulation(data):
                             'convergence_history': r['convergence_history']
                         } for r in results]
                     }, namespace='/')
-                    print("All simulations complete! Results sent to client.")
+                    print("All simulations complete! Synchronized GIFs sent to client.")
         except Exception as e:
             simulation_state['running'] = False
             socketio.emit('error', {'message': str(e)}, namespace='/')

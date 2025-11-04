@@ -8,9 +8,9 @@ function WelcomeScreen({ onStart }) {
   
   // Advanced options
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [gridSize, setGridSize] = useState(51);
-  const [tolerance, setTolerance] = useState(0.005);
-  const [maxIters, setMaxIters] = useState(5000);
+  const [gridSize, setGridSize] = useState(91);
+  const [tolerance, setTolerance] = useState(0.001);
+  const [maxIters, setMaxIters] = useState(15000);
   const [frameEvery, setFrameEvery] = useState(100);
 
   const handleSubmit = (e) => {
@@ -201,8 +201,8 @@ function WelcomeScreen({ onStart }) {
               </div>
               
               <p style={{ fontSize: '0.85rem', marginTop: '1rem', opacity: 0.6, textAlign: 'left' }}>
-                💡 <strong>Tip:</strong> For fastest results use 51x51 grid and 0.005 tolerance. 
-                For best quality use 181x181 grid and 0.001 tolerance (slower!).
+                💡 <strong>Tip:</strong> Defaults (91x91, tol=0.001) run until proper convergence (~2-3 min). 
+                For speed: 51x51 + tol=0.005 (~30 sec). For quality: 181x181 + tol=0.001 (~8-10 min).
               </p>
             </motion.div>
           )}
