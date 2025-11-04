@@ -55,10 +55,10 @@ function App() {
     return () => newSocket.close();
   }, []);
 
-  const handleStart = (hotFractions) => {
+  const handleStart = (params) => {
     if (socket) {
       setStarted(true);
-      socket.emit('start_simulation', { hot_fractions: hotFractions });
+      socket.emit('start_simulation', params);
     }
   };
 

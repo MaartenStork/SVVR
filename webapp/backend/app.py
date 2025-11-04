@@ -86,15 +86,15 @@ def run_simulation_with_streaming(hot_fraction, sim_index, total_sims):
         print(f"Error in simulation {sim_index}: {e}")
         raise e
 
-def run_simulation_streaming(hot_fraction, sim_index, total_sims):
+def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, tolerance=0.005, max_iters=5000, frame_every=100):
     """Modified simulation runner that streams data via WebSocket"""
     from pathlib import Path
     
-    # Simulation parameters (hardcoded for webapp - reduced for speed)
-    nx, ny = 91, 91  # Smaller grid for faster computation
-    tol = 1e-3
-    max_iters = 20000
-    output_every = 100  # Update less frequently for faster streaming
+    # Simulation parameters from user input
+    nx = ny = grid_size
+    tol = tolerance
+    max_iters = max_iters
+    frame_every = frame_every
     
     W, H = 9.0, 9.0
     dx = W / (nx - 1)
@@ -204,7 +204,14 @@ def handle_start_simulation(data):
         emit('error', {'message': 'Simulation already running'})
         return
     
+    # Extract parameters from client
     hot_fractions = data.get('hot_fractions', [0.1, 0.2, 0.33])
+    grid_size = data.get('grid_size', 51)
+    tolerance = data.get('tolerance', 0.005)
+    max_iters = data.get('max_iters', 5000)
+    frame_every = data.get('frame_every', 100)
+    
+    print(f"Starting simulations with grid={grid_size}x{grid_size}, tol={tolerance}, max_iters={max_iters}")
     
     simulation_state['running'] = True
     simulation_state['results'] = []
@@ -220,8 +227,9 @@ def handle_start_simulation(data):
     
     def run_single_simulation(fraction, idx):
         try:
-            print(f"Starting simulation {idx + 1}/{len(hot_fractions)}")
-            result = run_simulation_streaming(fraction, idx, len(hot_fractions))
+            print(f"Starting simulation {idx + 1}/{len(hot_fractions)}: fraction={fraction}")
+            result = run_simulation_streaming(fraction, idx, len(hot_fractions), 
+                                             grid_size, tolerance, max_iters, frame_every)
             
             with lock:
                 results[idx] = result
