@@ -154,6 +154,10 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, 
         convergence_history["iterations"].append(step)
         convergence_history["deltas"].append(delta)
         
+        # CRITICAL: Yield to other greenlets every 10 iterations for true parallelism
+        if step % 10 == 0:
+            eventlet.sleep(0)  # Cooperative yield
+        
         # Capture frames and send progress
         if step % frame_every == 0 or delta <= tol:
             frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
