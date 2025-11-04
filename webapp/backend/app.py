@@ -16,8 +16,20 @@ from PIL import Image
 import threading
 
 # Add parent directory to path to import simulation code
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../model'))
-import code as jacobi_sim
+model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../model'))
+print(f"Adding model path: {model_path}")
+print(f"Model path exists: {os.path.exists(model_path)}")
+if os.path.exists(model_path):
+    print(f"Files in model: {os.listdir(model_path)}")
+sys.path.insert(0, model_path)
+
+try:
+    import code as jacobi_sim
+    print(f"Successfully imported code module")
+    print(f"Available functions: {[attr for attr in dir(jacobi_sim) if not attr.startswith('_')]}")
+except Exception as e:
+    print(f"Error importing code module: {e}")
+    raise
 
 # Configure Flask to serve React build folder
 build_folder = os.path.join(os.path.dirname(__file__), '../frontend/build')
