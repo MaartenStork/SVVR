@@ -168,11 +168,21 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                 </div>
 
                 <img
+                  key={`gif-${index}-${Date.now()}`}  // Force reload with unique key
                   src={result.gif_data}
                   alt={`Simulation ${index + 1}`}
                   className="simulation-frame"
-                  style={{ cursor: 'pointer' }}
+                  style={{ 
+                    cursor: 'pointer',
+                    imageRendering: 'auto',
+                    display: 'block',
+                    width: '100%'
+                  }}
                   title="Click to view full size"
+                  onLoad={(e) => {
+                    // Force all GIFs to restart together
+                    console.log(`GIF ${index} loaded`);
+                  }}
                 />
               </motion.div>
             ))}

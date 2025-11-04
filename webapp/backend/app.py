@@ -153,11 +153,17 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, 
         if step % frame_every == 0 or delta <= tol:
             frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
             
-            # Calculate progress based on convergence (approaching tolerance)
-            if initial_delta and initial_delta > tol:
-                # Progress = how close delta is to tolerance
-                progress = int(((initial_delta - delta) / (initial_delta - tol)) * 100)
-                progress = max(0, min(100, progress))  # Clamp to 0-100
+            # Calculate progress based on convergence (logarithmic scale for exponential decay)
+            if initial_delta and initial_delta > tol and delta > tol:
+                import math
+                # Use log scale: progress increases as delta decreases exponentially
+                log_initial = math.log10(initial_delta)
+                log_current = math.log10(delta)
+                log_target = math.log10(tol)
+                progress = int(((log_initial - log_current) / (log_initial - log_target)) * 100)
+                progress = max(0, min(99, progress))  # Cap at 99% until converged
+            elif delta <= tol:
+                progress = 100  # Converged!
             else:
                 progress = int((step / max_iters) * 100)
             
@@ -255,17 +261,29 @@ def handle_start_simulation(data):
                 if all(r is not None for r in results):
                     # Synchronize GIF lengths - pad shorter ones with last frame
                     max_frames = max(len(r['frames']) for r in results)
-                    print(f"Synchronizing GIFs: max {max_frames} frames")
+                    print(f"Synchronizing GIFs to {max_frames} frames each")
                     
                     for r in results:
-                        while len(r['frames']) < max_frames:
-                            r['frames'].append(r['frames'][-1])  # Duplicate last frame
+                        frames_needed = max_frames - len(r['frames'])
+                        if frames_needed > 0:
+                            print(f"  Sim {results.index(r)}: Adding {frames_needed} frames (was {len(r['frames'])})")
+                            # Add frames BEFORE and AFTER for smooth looping
+                            padding_start = frames_needed // 2
+                            padding_end = frames_needed - padding_start
+                            # Pad start with first frame
+                            r['frames'] = [r['frames'][0]] * padding_start + r['frames']
+                            # Pad end with last frame
+                            r['frames'] = r['frames'] + [r['frames'][-1]] * padding_end
                     
-                    # Generate synchronized GIFs
-                    for r in results:
-                        gif_bytes = generate_gif(r['frames'], fps=5)  # Slower FPS for better viewing
+                    # Generate synchronized GIFs with EXACT same settings
+                    duration_ms = 200  # 200ms per frame = 5 FPS
+                    for i, r in enumerate(results):
+                        print(f"  Generating GIF for Sim {i}: {len(r['frames'])} frames @ {duration_ms}ms/frame")
+                        gif_bytes = generate_gif(r['frames'], fps=5)
                         r['gif_data'] = f"data:image/gif;base64,{base64.b64encode(gif_bytes).decode()}"
                         del r['frames']  # Free memory
+                    
+                    print(f"All GIFs generated with {max_frames} frames each")
                     
                     simulation_state['results'] = results
                     simulation_state['running'] = False
