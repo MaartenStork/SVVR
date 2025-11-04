@@ -59,6 +59,23 @@ def frame_to_base64(frame_array):
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return f"data:image/png;base64,{img_str}"
 
+def generate_gif(frames, fps=10):
+    """Generate GIF from list of frames"""
+    pil_frames = [Image.fromarray(frame) for frame in frames]
+    duration_ms = int(1000 / fps)
+    
+    # Save to bytes buffer
+    buffered = io.BytesIO()
+    pil_frames[0].save(
+        buffered,
+        format='GIF',
+        save_all=True,
+        append_images=pil_frames[1:],
+        duration=duration_ms,
+        loop=0
+    )
+    return buffered.getvalue()
+
 def run_simulation_with_streaming(hot_fraction, sim_index, total_sims):
     """Run a single simulation and stream progress - NO FILE WRITING!"""
     # Run simulation directly in memory - NO VTK FILES
@@ -108,25 +125,17 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
         for i in range(i0, i1 + 1):
             fixed[j][i] = True
     
-    # Iteration loop with streaming
+    # Iteration loop - NO STREAMING, just collect frames
     step = 0
     delta = float("inf")
     convergence_history = {"iterations": [], "deltas": []}
+    frames = []
+    frame_every = 200  # Capture frame every N iterations
     
-    # Send initial frame (reduce DPI for smaller file size)
-    frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=30)
-    frame_base64 = frame_to_base64(frame)
+    # Initial frame
+    frames.append(jacobi_sim.create_temperature_frame(T_old, 0, delta, T_BOTTOM, T_HOT, dpi=60))
     
-    print(f"Sim {sim_index}: Starting with {nx}x{ny} grid")
-    
-    socketio.emit('simulation_update', {
-        'sim_index': sim_index,
-        'iteration': step,
-        'delta': delta,
-        'frame': frame_base64,
-        'hot_fraction': hot_fraction,
-        'converged': False
-    }, namespace='/')
+    print(f"Sim {sim_index}: Starting with {nx}x{ny} grid, hot_fraction={hot_fraction}")
     
     while delta > tol and step < max_iters:
         delta = jacobi_sim.jacobi_step(T_old, T_new, fixed)
@@ -136,30 +145,25 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims):
         convergence_history["iterations"].append(step)
         convergence_history["deltas"].append(delta)
         
-        # Stream progress at intervals
-        if step % output_every == 0 or delta <= tol:
-            frame = jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=30)
-            frame_base64 = frame_to_base64(frame)
-            
-            print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}")  # Debug log
-            
-            socketio.emit('simulation_update', {
-                'sim_index': sim_index,
-                'iteration': step,
-                'delta': delta,
-                'frame': frame_base64,
-                'hot_fraction': hot_fraction,
-                'converged': delta <= tol
-            }, namespace='/')
-            
-            # Longer sleep to prevent overwhelming the connection
-            socketio.sleep(0.2)
+        # Capture frames for GIF (no streaming!)
+        if step % frame_every == 0 or delta <= tol:
+            frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
+            if step % 500 == 0:  # Progress log every 500 iterations
+                print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}")
+    
+    # Generate GIF from collected frames
+    print(f"Sim {sim_index}: Complete! Generating GIF with {len(frames)} frames...")
+    gif_bytes = generate_gif(frames, fps=10)
+    gif_base64 = base64.b64encode(gif_bytes).decode()
+    
+    print(f"Sim {sim_index}: Done! {step} iterations, GIF ready")
     
     return {
         'convergence_history': convergence_history,
         'final_iter': step,
         'final_delta': delta,
-        'hot_fraction': hot_fraction
+        'hot_fraction': hot_fraction,
+        'gif_data': f"data:image/gif;base64,{gif_base64}"
     }
 
 @app.route('/health', methods=['GET'])
@@ -210,34 +214,40 @@ def handle_start_simulation(data):
         'num_simulations': len(hot_fractions)
     })
     
-    # Run simulations in PARALLEL threads for speed!
+    # Run ALL simulations in PARALLEL!
+    results = [None] * len(hot_fractions)
+    lock = threading.Lock()
+    
     def run_single_simulation(fraction, idx):
         try:
-            socketio.emit('simulation_status', {
-                'message': f'Running simulation {idx + 1}/{len(hot_fractions)}',
-                'current_sim': idx,
-                'total_sims': len(hot_fractions)
-            })
-            
+            print(f"Starting simulation {idx + 1}/{len(hot_fractions)}")
             result = run_simulation_streaming(fraction, idx, len(hot_fractions))
-            simulation_state['results'].append(result)
             
-            # Check if all simulations are done
-            if len(simulation_state['results']) == len(hot_fractions):
-                simulation_state['running'] = False
-                socketio.emit('all_simulations_complete', {
-                    'message': 'All simulations completed',
-                    'results': [{
-                        'hot_fraction': r['hot_fraction'],
-                        'final_iter': r['final_iter'],
-                        'final_delta': r['final_delta']
-                    } for r in simulation_state['results']]
-                })
+            with lock:
+                results[idx] = result
+                # Check if all simulations are done
+                if all(r is not None for r in results):
+                    simulation_state['results'] = results
+                    simulation_state['running'] = False
+                    
+                    # Send ALL results at once!
+                    socketio.emit('all_simulations_complete', {
+                        'message': 'All simulations completed!',
+                        'results': [{
+                            'hot_fraction': r['hot_fraction'],
+                            'final_iter': r['final_iter'],
+                            'final_delta': r['final_delta'],
+                            'gif_data': r['gif_data'],
+                            'convergence_history': r['convergence_history']
+                        } for r in results]
+                    }, namespace='/')
+                    print("All simulations complete! Results sent to client.")
         except Exception as e:
             simulation_state['running'] = False
-            socketio.emit('error', {'message': str(e)})
+            socketio.emit('error', {'message': str(e)}, namespace='/')
+            print(f"Error in simulation {idx}: {e}")
     
-    # Start ALL simulations in parallel
+    # Start ALL simulations in PARALLEL threads
     threads = []
     for idx, fraction in enumerate(hot_fractions):
         thread = threading.Thread(target=run_single_simulation, args=(fraction, idx))

@@ -2,19 +2,20 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-function SimulationView({ simulations, convergenceData, isRunning, statusMessage, onReset }) {
+function SimulationView({ results, isRunning, statusMessage, onReset }) {
   // Prepare data for convergence chart
   const prepareChartData = () => {
-    const maxLength = Math.max(
-      ...Object.values(convergenceData).map(data => data?.length || 0)
-    );
+    if (!results) return [];
+    
+    const maxLength = Math.max(...results.map(r => r.convergence_history.iterations.length));
     
     const chartData = [];
     for (let i = 0; i < maxLength; i++) {
-      const dataPoint = { iteration: i };
-      Object.keys(convergenceData).forEach(simIndex => {
-        if (convergenceData[simIndex] && convergenceData[simIndex][i]) {
-          dataPoint[`sim${simIndex}`] = convergenceData[simIndex][i].delta;
+      const dataPoint = { index: i };
+      results.forEach((result, simIndex) => {
+        if (result.convergence_history.iterations[i]) {
+          dataPoint[`sim${simIndex}`] = result.convergence_history.deltas[i];
+          dataPoint.iteration = result.convergence_history.iterations[i];
         }
       });
       chartData.push(dataPoint);
@@ -34,68 +35,92 @@ function SimulationView({ simulations, convergenceData, isRunning, statusMessage
       transition={{ duration: 0.5 }}
     >
       <div className="simulation-header">
-        <h1>Live Simulation Dashboard</h1>
+        <h1>Simulation Results</h1>
         <div className="status-message">
-          {isRunning && <span className="running-indicator"></span>}
-          {statusMessage}
+          {isRunning && (
+            <>
+              <span className="running-indicator"></span>
+              {statusMessage}
+            </>
+          )}
+          {!isRunning && results && (
+            <span>✅ {statusMessage}</span>
+          )}
         </div>
-        <button className="reset-button" onClick={onReset}>
-          ↻ New Simulation
-        </button>
+        {!isRunning && results && (
+          <button className="reset-button" onClick={onReset}>
+            ↻ New Simulation
+          </button>
+        )}
       </div>
 
-      <div className="simulation-content">
-        {/* Left Panel: Simulations */}
-        <div className="simulations-panel">
-          {simulations.map((sim, index) => (
-            <motion.div
-              key={index}
-              className="simulation-card"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <h3>
-                <span>Hot-Square {(sim?.hot_fraction || 0).toFixed(2)}</span>
-                {sim?.converged && <span className="converged-badge">✓ Converged</span>}
-              </h3>
-              
-              <div className="simulation-info">
-                <span>Iteration: {sim?.iteration || 0}</span>
-                <span>Delta: {(sim?.delta || 0).toExponential(2)}</span>
-              </div>
+      {isRunning ? (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          gap: '2rem'
+        }}>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            style={{ fontSize: '5rem' }}
+          >
+            ⏳
+          </motion.div>
+          <h2 style={{ fontSize: '2rem', opacity: 0.9 }}>
+            Running 3 simulations in parallel...
+          </h2>
+          <p style={{ fontSize: '1.2rem', opacity: 0.7 }}>
+            This may take 3-5 minutes. The simulations are computing heat diffusion with Jacobi iteration.
+          </p>
+        </div>
+      ) : results ? (
+        <div className="simulation-content">
+          {/* Left Panel: GIF Simulations */}
+          <div className="simulations-panel">
+            {results.map((result, index) => (
+              <motion.div
+                key={index}
+                className="simulation-card"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <h3>
+                  <span>Hot-Square {result.hot_fraction.toFixed(2)}</span>
+                  <span className="converged-badge">
+                    {result.final_iter} iterations
+                  </span>
+                </h3>
+                
+                <div className="simulation-info">
+                  <span>Converged at iteration: {result.final_iter}</span>
+                  <span>Final Delta: {result.final_delta.toExponential(2)}</span>
+                </div>
 
-              {sim?.frame ? (
                 <img
-                  src={sim.frame}
+                  src={result.gif_data}
                   alt={`Simulation ${index + 1}`}
                   className="simulation-frame"
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view full size"
                 />
-              ) : (
-                <div className="simulation-frame loading">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    style={{ fontSize: '2rem' }}
-                  >
-                    ⏳
-                  </motion.div>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
 
-        {/* Right Panel: Convergence Plot */}
-        <motion.div
-          className="convergence-panel"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <h2>Convergence Comparison</h2>
-          
-          {chartData.length > 0 ? (
+          {/* Right Panel: Convergence Plot */}
+          <motion.div
+            className="convergence-panel"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <h2>Convergence Comparison</h2>
+            
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={600}>
                 <LineChart data={chartData}>
@@ -111,65 +136,53 @@ function SimulationView({ simulations, convergenceData, isRunning, statusMessage
                   />
                   <Tooltip 
                     contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px' }}
-                    formatter={(value) => value.toExponential(2)}
+                    formatter={(value) => value?.toExponential(2)}
                   />
                   <Legend />
-                  {simulations.map((sim, index) => (
+                  {results.map((result, index) => (
                     <Line
                       key={index}
                       type="monotone"
                       dataKey={`sim${index}`}
-                      name={`Size ${(sim?.hot_fraction || 0).toFixed(2)}`}
+                      name={`Size ${result.hot_fraction.toFixed(2)}`}
                       stroke={colors[index % colors.length]}
-                      strokeWidth={2}
+                      strokeWidth={3}
                       dot={false}
-                      isAnimationActive={false}
+                      isAnimationActive={true}
                     />
                   ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          ) : (
-            <div style={{ 
-              background: 'rgba(255, 255, 255, 0.1)', 
-              height: '600px', 
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem'
-            }}>
-              Waiting for simulation data...
-            </div>
-          )}
 
-          {simulations.length > 0 && simulations.some(s => s?.converged) && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               style={{ 
                 marginTop: '1.5rem', 
-                padding: '1rem', 
+                padding: '1.5rem', 
                 background: 'rgba(74, 222, 128, 0.2)',
                 borderRadius: '10px',
                 border: '2px solid rgba(74, 222, 128, 0.5)'
               }}
             >
-              <h3 style={{ marginBottom: '0.5rem' }}>Results Summary:</h3>
-              {simulations.map((sim, index) => 
-                sim?.converged && (
-                  <div key={index} style={{ marginBottom: '0.3rem' }}>
-                    <strong>Size {(sim.hot_fraction || 0).toFixed(2)}:</strong> {sim.iteration} iterations
-                  </div>
-                )
-              )}
+              <h3 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>
+                🔬 Research Finding:
+              </h3>
+              <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
+                <strong>Larger hot squares converge FASTER!</strong>
+              </p>
+              {results.map((result, index) => (
+                <div key={index} style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
+                  <strong>Size {result.hot_fraction.toFixed(2)}:</strong> {result.final_iter} iterations
+                </div>
+              ))}
             </motion.div>
-          )}
-        </motion.div>
-      </div>
+          </motion.div>
+        </div>
+      ) : null}
     </motion.div>
   );
 }
 
 export default SimulationView;
-

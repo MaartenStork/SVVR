@@ -11,8 +11,7 @@ const BACKEND_URL = window.location.origin;
 function App() {
   const [socket, setSocket] = useState(null);
   const [started, setStarted] = useState(false);
-  const [simulations, setSimulations] = useState([]);
-  const [convergenceData, setConvergenceData] = useState({});
+  const [results, setResults] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
@@ -31,53 +30,18 @@ function App() {
       setStatusMessage('Connected to simulation server');
     });
 
-    newSocket.on('simulation_update', (data) => {
-      console.log('Received simulation_update:', data.sim_index, 'iteration:', data.iteration);
-      const { sim_index, iteration, delta, frame, hot_fraction, converged } = data;
-      
-      // Update simulation frame
-      setSimulations(prev => {
-        const newSims = [...prev];
-        newSims[sim_index] = {
-          ...newSims[sim_index],
-          frame,
-          iteration,
-          delta,
-          hot_fraction,
-          converged
-        };
-        return newSims;
-      });
-
-      // Update convergence data
-      setConvergenceData(prev => ({
-        ...prev,
-        [sim_index]: [
-          ...(prev[sim_index] || []),
-          { iteration, delta, hot_fraction }
-        ]
-      }));
-    });
-
     newSocket.on('simulation_started', (data) => {
+      console.log('Simulations started!');
       setIsRunning(true);
-      setStatusMessage(data.message);
-      // Initialize simulation states
-      const numSims = data.num_simulations;
-      setSimulations(Array(numSims).fill(null).map(() => ({
-        frame: null,
-        iteration: 0,
-        delta: 0,
-        hot_fraction: 0,
-        converged: false
-      })));
-      setConvergenceData({});
+      setStatusMessage('Running simulations in parallel... Please wait.');
+      setResults(null);
     });
 
     newSocket.on('all_simulations_complete', (data) => {
+      console.log('All simulations complete!', data.results);
       setIsRunning(false);
       setStatusMessage('All simulations completed!');
-      console.log('Results:', data.results);
+      setResults(data.results);
     });
 
     newSocket.on('error', (data) => {
@@ -100,8 +64,7 @@ function App() {
 
   const handleReset = () => {
     setStarted(false);
-    setSimulations([]);
-    setConvergenceData({});
+    setResults(null);
     setIsRunning(false);
     setStatusMessage('');
   };
@@ -114,8 +77,7 @@ function App() {
         ) : (
           <SimulationView
             key="simulation"
-            simulations={simulations}
-            convergenceData={convergenceData}
+            results={results}
             isRunning={isRunning}
             statusMessage={statusMessage}
             onReset={handleReset}
