@@ -23,7 +23,15 @@ import code as jacobi_sim
 build_folder = os.path.join(os.path.dirname(__file__), '../frontend/build')
 app = Flask(__name__, static_folder=build_folder, static_url_path='')
 CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(
+    app, 
+    cors_allowed_origins="*", 
+    async_mode='eventlet',
+    logger=True,
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25
+)
 
 # Global state for simulation
 simulation_state = {

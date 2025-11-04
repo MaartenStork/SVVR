@@ -19,8 +19,11 @@ function App() {
   useEffect(() => {
     // Connect to WebSocket
     const newSocket = io(BACKEND_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000
     });
 
     newSocket.on('connect', () => {
