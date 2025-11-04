@@ -148,8 +148,17 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, 
         # Capture frames for GIF (no streaming!)
         if step % frame_every == 0 or delta <= tol:
             frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
+            # Send progress update
+            progress = min(100, int((step / max_iters) * 100))
+            socketio.emit('simulation_progress', {
+                'sim_index': sim_index,
+                'iteration': step,
+                'max_iters': max_iters,
+                'progress': progress,
+                'delta': delta
+            }, namespace='/')
             if step % 500 == 0:  # Progress log every 500 iterations
-                print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}")
+                print(f"Sim {sim_index}: Iteration {step}/{max_iters}, Delta {delta:.2e}, Progress {progress}%")
     
     # Return frames (GIF will be generated after synchronization)
     print(f"Sim {sim_index}: Complete! {step} iterations, {len(frames)} frames collected")

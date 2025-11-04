@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-function SimulationView({ results, isRunning, statusMessage, onReset }) {
+function SimulationView({ results, isRunning, statusMessage, progress, onReset }) {
   // Prepare data for convergence chart
   const prepareChartData = () => {
     if (!results) return [];
@@ -56,26 +56,101 @@ function SimulationView({ results, isRunning, statusMessage, onReset }) {
 
       {isRunning ? (
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '60vh',
-          gap: '2rem'
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '2rem',
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '2rem'
         }}>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{ fontSize: '5rem' }}
-          >
-            ⏳
-          </motion.div>
-          <h2 style={{ fontSize: '2rem', opacity: 0.9 }}>
-            Running 3 simulations in parallel...
-          </h2>
-          <p style={{ fontSize: '1.2rem', opacity: 0.7 }}>
-            This may take 3-5 minutes. The simulations are computing heat diffusion with Jacobi iteration.
-          </p>
+          {/* Left: Progress Bars */}
+          <div>
+            <h2 style={{ fontSize: '1.8rem', marginBottom: '2rem' }}>
+              🔄 Running Simulations
+            </h2>
+            
+            {['Size 0.10', 'Size 0.20', 'Size 0.33'].map((label, idx) => (
+              <div key={idx} style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{label}</span>
+                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>{progress[idx]}%</span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '30px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '15px',
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress[idx]}%` }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                      height: '100%',
+                      background: `linear-gradient(90deg, #4ade80, #22c55e)`,
+                      borderRadius: '15px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    {progress[idx] > 10 && `${progress[idx]}%`}
+                  </motion.div>
+                </div>
+              </div>
+            ))}
+            
+            <p style={{ fontSize: '1rem', marginTop: '2rem', opacity: 0.8, lineHeight: '1.6' }}>
+              ⚡ All three simulations are running in parallel.<br/>
+              ⏱️ This may take 2-5 minutes depending on settings.<br/>
+              📊 Results will appear when all simulations complete.
+            </p>
+          </div>
+
+          {/* Right: PDF Viewer */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '15px',
+            padding: '2rem',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>
+              📄 Read My Research Report
+            </h2>
+            <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem', opacity: 0.9 }}>
+              While you wait, learn about the research question:
+              <br/><strong>"Does hot-square size affect solve difficulty?"</strong>
+            </p>
+            
+            <div style={{
+              width: '100%',
+              height: '500px',
+              background: 'white',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#333',
+              fontSize: '1.1rem',
+              padding: '2rem',
+              textAlign: 'center',
+              lineHeight: '1.8'
+            }}>
+              <div>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+                <p><strong>Expected Finding:</strong></p>
+                <p>Larger hot squares will converge<br/>significantly FASTER than smaller ones!</p>
+                <p style={{ marginTop: '1.5rem', fontSize: '0.95rem', opacity: 0.7 }}>
+                  (Upload a PDF to /public/report.pdf to display it here)
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       ) : results ? (
         <div className="simulation-content">
