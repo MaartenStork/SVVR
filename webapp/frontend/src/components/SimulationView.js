@@ -87,7 +87,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                     initial={{ width: 0 }}
                     animate={{ width: `${progress[idx]}%` }}
                     transition={{ 
-                      duration: 0.5,  // Fast smooth animation to match update frequency
+                      duration: 0.3,  // Match update frequency exactly
                       ease: "linear"  // Linear for continuous flow
                     }}
                     style={{
@@ -111,7 +111,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             <p style={{ fontSize: '1rem', marginTop: '2rem', opacity: 0.8, lineHeight: '1.6' }}>
               ⚡ All three simulations are running in parallel.<br/>
               ⏱️ Default settings: ~1-2 minutes. High quality: ~3-10 minutes.<br/>
-              📊 Progress bars update every second based on convergence!
+              📊 Progress shows convergence (delta → tolerance). Updates 3x/second!
             </p>
           </div>
 
