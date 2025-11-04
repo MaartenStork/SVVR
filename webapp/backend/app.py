@@ -128,9 +128,9 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, 
     # Iteration loop - NO STREAMING, just collect frames
     step = 0
     delta = float("inf")
+    initial_delta = None
     convergence_history = {"iterations": [], "deltas": []}
     frames = []
-    frame_every = 200  # Capture frame every N iterations
     
     # Initial frame
     frames.append(jacobi_sim.create_temperature_frame(T_old, 0, delta, T_BOTTOM, T_HOT, dpi=60))
@@ -142,23 +142,36 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=91, 
         T_old, T_new = T_new, T_old
         step += 1
         
+        # Capture initial delta after first iteration
+        if step == 1:
+            initial_delta = delta
+        
         convergence_history["iterations"].append(step)
         convergence_history["deltas"].append(delta)
         
-        # Capture frames for GIF (no streaming!)
+        # Capture frames and send progress
         if step % frame_every == 0 or delta <= tol:
             frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
-            # Send progress update
-            progress = min(100, int((step / max_iters) * 100))
+            
+            # Calculate progress based on convergence (approaching tolerance)
+            if initial_delta and initial_delta > tol:
+                # Progress = how close delta is to tolerance
+                progress = int(((initial_delta - delta) / (initial_delta - tol)) * 100)
+                progress = max(0, min(100, progress))  # Clamp to 0-100
+            else:
+                progress = int((step / max_iters) * 100)
+            
             socketio.emit('simulation_progress', {
                 'sim_index': sim_index,
                 'iteration': step,
-                'max_iters': max_iters,
                 'progress': progress,
-                'delta': delta
+                'delta': delta,
+                'initial_delta': initial_delta,
+                'tolerance': tol
             }, namespace='/')
+            
             if step % 500 == 0:  # Progress log every 500 iterations
-                print(f"Sim {sim_index}: Iteration {step}/{max_iters}, Delta {delta:.2e}, Progress {progress}%")
+                print(f"Sim {sim_index}: Iteration {step}, Delta {delta:.2e}, Progress {progress}%")
     
     # Return frames (GIF will be generated after synchronization)
     print(f"Sim {sim_index}: Complete! {step} iterations, {len(frames)} frames collected")

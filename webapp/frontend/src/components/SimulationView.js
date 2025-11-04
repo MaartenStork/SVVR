@@ -86,7 +86,10 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progress[idx]}%` }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ 
+                      duration: 1.5,  // Longer, smoother animation
+                      ease: "easeOut"  // Smooth easing
+                    }}
                     style={{
                       height: '100%',
                       background: `linear-gradient(90deg, #4ade80, #22c55e)`,
