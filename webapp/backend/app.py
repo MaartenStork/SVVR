@@ -249,13 +249,13 @@ def handle_start_simulation(data):
         'num_simulations': len(hot_fractions)
     })
     
-    # Progress monitoring - broadcasts progress every second
+    # Progress monitoring - broadcasts progress frequently for smooth updates
     def monitor_progress():
         while simulation_state['running']:
             socketio.emit('simulation_progress', {
                 'progress': simulation_state['progress']
             }, namespace='/')
-            eventlet.sleep(1)  # Update every second
+            eventlet.sleep(0.3)  # Update 3x per second for smoother bars
     
     # Start monitor in eventlet greenlet
     eventlet.spawn(monitor_progress)

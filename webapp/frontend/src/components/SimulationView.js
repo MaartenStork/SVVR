@@ -87,8 +87,8 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                     initial={{ width: 0 }}
                     animate={{ width: `${progress[idx]}%` }}
                     transition={{ 
-                      duration: 1.5,  // Longer, smoother animation
-                      ease: "easeOut"  // Smooth easing
+                      duration: 0.5,  // Fast smooth animation to match update frequency
+                      ease: "linear"  // Linear for continuous flow
                     }}
                     style={{
                       height: '100%',
