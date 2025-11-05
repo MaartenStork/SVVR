@@ -138,7 +138,7 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, 
     frames = []
     
     # Initial frame
-    frames.append(jacobi_sim.create_temperature_frame(T_old, 0, delta, T_BOTTOM, T_HOT, dpi=60))
+    frames.append(jacobi_sim.create_temperature_frame(T_old, 0, delta, T_BOTTOM, T_HOT, dpi=100))
     
     print(f"Sim {sim_index}: Starting with {nx}x{ny} grid, hot_fraction={hot_fraction}")
     
@@ -160,7 +160,7 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, 
         
         # Capture frames and send progress
         if step % frame_every == 0 or delta <= tol:
-            frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
+            frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=100))
             
             # Calculate progress based on convergence (logarithmic scale for exponential decay)
             if initial_delta and initial_delta > tol and delta > tol:
