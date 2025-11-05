@@ -91,7 +91,7 @@ def run_simulation_with_streaming(hot_fraction, sim_index, total_sims):
         print(f"Error in simulation {sim_index}: {e}")
         raise e
 
-def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, tolerance=0.001, max_iters=15000, frame_every=100):
+def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, tolerance=0.001, max_iters=15000, frame_every=20):
     """Modified simulation runner that streams data via WebSocket"""
     from pathlib import Path
     
@@ -236,7 +236,7 @@ def handle_start_simulation(data):
     grid_size = data.get('grid_size', 51)
     tolerance = data.get('tolerance', 0.001)
     max_iters = data.get('max_iters', 15000)
-    frame_every = data.get('frame_every', 100)
+    frame_every = data.get('frame_every', 20)
     
     print(f"Starting simulations with grid={grid_size}x{grid_size}, tol={tolerance}, max_iters={max_iters}")
     

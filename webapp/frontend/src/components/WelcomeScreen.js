@@ -12,7 +12,7 @@ function WelcomeScreen({ onStart }) {
   const [gridSize, setGridSize] = useState(51);
   const [tolerance, setTolerance] = useState(0.001);
   const [maxIters, setMaxIters] = useState(15000);
-  const [frameEvery, setFrameEvery] = useState(100);
+  const [frameEvery, setFrameEvery] = useState(20);
 
   const addSimulation = () => {
     if (simulations.length < 5) {  // Max 5 simulations
@@ -247,9 +247,9 @@ function WelcomeScreen({ onStart }) {
                     id="frameEvery"
                     name="frameEvery"
                     type="number"
-                    min="50"
+                    min="1"
                     max="500"
-                    step="50"
+                    step="1"
                     value={frameEvery}
                     onChange={(e) => setFrameEvery(e.target.value)}
                   />
