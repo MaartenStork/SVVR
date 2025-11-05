@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 function WelcomeScreen({ onStart }) {
-  const [fraction1, setFraction1] = useState(0.1);
-  const [fraction2, setFraction2] = useState(0.2);
-  const [fraction3, setFraction3] = useState(0.33);
+  // Dynamic simulations (start with 1)
+  const [simulations, setSimulations] = useState([
+    { id: 1, fraction: 0.2 }
+  ]);
   
   // Advanced options
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -13,13 +14,30 @@ function WelcomeScreen({ onStart }) {
   const [maxIters, setMaxIters] = useState(15000);
   const [frameEvery, setFrameEvery] = useState(100);
 
+  const addSimulation = () => {
+    if (simulations.length < 5) {  // Max 5 simulations
+      const newId = Math.max(...simulations.map(s => s.id)) + 1;
+      setSimulations([...simulations, { id: newId, fraction: 0.2 }]);
+    }
+  };
+
+  const removeSimulation = (id) => {
+    if (simulations.length > 1) {  // Keep at least 1
+      setSimulations(simulations.filter(s => s.id !== id));
+    }
+  };
+
+  const updateFraction = (id, value) => {
+    setSimulations(simulations.map(s => 
+      s.id === id ? { ...s, fraction: parseFloat(value) } : s
+    ));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const fractions = [
-      parseFloat(fraction1),
-      parseFloat(fraction2),
-      parseFloat(fraction3)
-    ].filter(f => f > 0 && f <= 1);
+    const fractions = simulations
+      .map(s => s.fraction)
+      .filter(f => f > 0 && f <= 1);
     
     if (fractions.length > 0) {
       onStart({
@@ -71,50 +89,64 @@ function WelcomeScreen({ onStart }) {
         
         <form onSubmit={handleSubmit}>
           <div className="fraction-inputs">
-            <div className="input-group">
-              <label htmlFor="fraction1">Simulation 1 (Small):</label>
-              <input
-                id="fraction1"
-                name="fraction1"
-                type="number"
-                step="0.01"
-                min="0.01"
-                max="1"
-                value={fraction1}
-                onChange={(e) => setFraction1(e.target.value)}
-                placeholder="e.g., 0.1"
-              />
-            </div>
+            {simulations.map((sim, index) => (
+              <div key={sim.id} className="input-group">
+                <label htmlFor={`fraction${sim.id}`}>
+                  Hot-Square Size {index + 1}:
+                </label>
+                <input
+                  id={`fraction${sim.id}`}
+                  name={`fraction${sim.id}`}
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max="1"
+                  value={sim.fraction}
+                  onChange={(e) => updateFraction(sim.id, e.target.value)}
+                  placeholder="e.g., 0.2"
+                />
+                {simulations.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSimulation(sim.id)}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.5rem 1rem',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
             
-            <div className="input-group">
-              <label htmlFor="fraction2">Simulation 2 (Medium):</label>
-              <input
-                id="fraction2"
-                name="fraction2"
-                type="number"
-                step="0.01"
-                min="0.01"
-                max="1"
-                value={fraction2}
-                onChange={(e) => setFraction2(e.target.value)}
-                placeholder="e.g., 0.2"
-              />
-            </div>
-            
-            <div className="input-group">
-              <label htmlFor="fraction3">Simulation 3 (Large):</label>
-              <input
-                id="fraction3"
-                name="fraction3"
-                type="number"
-                step="0.01"
-                min="0.01"
-                max="1"
-                value={fraction3}
-                onChange={(e) => setFraction3(e.target.value)}
-                placeholder="e.g., 0.33"
-              />
-            </div>
+            {/* Add Simulation Button */}
+            {simulations.length < 5 && (
+              <button
+                type="button"
+                onClick={addSimulation}
+                style={{
+                  background: 'rgba(74, 222, 128, 0.3)',
+                  border: '2px dashed rgba(74, 222, 128, 0.6)',
+                  color: 'white',
+                  padding: '0.8rem',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  width: '100%',
+                  marginTop: '0.5rem'
+                }}
+              >
+                ➕ Add Another Simulation (max 5)
+              </button>
+            )}
           </div>
 
           {/* Advanced Options Toggle */}

@@ -14,7 +14,8 @@ function App() {
   const [results, setResults] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [progress, setProgress] = useState([0, 0, 0]);
+  const [progress, setProgress] = useState([]);
+  const [numSimulations, setNumSimulations] = useState(0);
 
   useEffect(() => {
     // Connect to WebSocket
@@ -45,11 +46,12 @@ function App() {
     });
 
     newSocket.on('simulation_started', (data) => {
-      console.log('Simulations started!');
+      console.log(`Simulations started! Running ${data.num_simulations} simulations`);
       setIsRunning(true);
-      setStatusMessage('Running simulations in parallel... Please wait.');
+      setNumSimulations(data.num_simulations);
+      setStatusMessage(`Running ${data.num_simulations} simulation${data.num_simulations > 1 ? 's' : ''} in parallel...`);
       setResults(null);
-      setProgress([0, 0, 0]);
+      setProgress(new Array(data.num_simulations).fill(0));
     });
 
     newSocket.on('simulation_progress', (data) => {
@@ -90,7 +92,8 @@ function App() {
     setResults(null);
     setIsRunning(false);
     setStatusMessage('');
-    setProgress([0, 0, 0]);
+    setProgress([]);
+    setNumSimulations(0);
   };
 
   return (

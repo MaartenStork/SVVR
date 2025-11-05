@@ -53,7 +53,7 @@ socketio = SocketIO(
 simulation_state = {
     'running': False,
     'results': [],
-    'progress': [0, 0, 0]  # Track progress for each simulation
+    'progress': []  # Track progress for each simulation (dynamic size)
 }
 
 def frame_to_base64(frame_array):
@@ -242,7 +242,7 @@ def handle_start_simulation(data):
     
     simulation_state['running'] = True
     simulation_state['results'] = []
-    simulation_state['progress'] = [0, 0, 0]
+    simulation_state['progress'] = [0] * len(hot_fractions)  # Dynamic size based on number of simulations
     
     emit('simulation_started', {
         'message': 'Starting simulations',

@@ -69,11 +69,13 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
               🔄 Running Simulations
             </h2>
             
-            {['Size 0.10', 'Size 0.20', 'Size 0.33'].map((label, idx) => (
+            {progress.map((prog, idx) => (
               <div key={idx} style={{ marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{label}</span>
-                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>{progress[idx]}%</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                    Simulation {idx + 1}
+                  </span>
+                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>{prog}%</span>
                 </div>
                 <div style={{
                   width: '100%',
