@@ -65,7 +65,7 @@ function WelcomeScreen({ onStart }) {
         animate={{ scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        🔥 Jacobi Heat Simulation
+        Jacobi Heat Simulation
       </motion.h1>
       
       <motion.p
@@ -132,8 +132,8 @@ function WelcomeScreen({ onStart }) {
                 type="button"
                 onClick={addSimulation}
                 style={{
-                  background: 'rgba(74, 222, 128, 0.3)',
-                  border: '2px dashed rgba(74, 222, 128, 0.6)',
+                  background: 'rgba(139, 92, 246, 0.3)',
+                  border: '2px dashed rgba(167, 139, 250, 0.6)',
                   color: 'white',
                   padding: '0.8rem',
                   borderRadius: '10px',
@@ -149,6 +149,16 @@ function WelcomeScreen({ onStart }) {
             )}
           </div>
 
+          <motion.button
+            type="submit"
+            className="start-button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ marginBottom: '0rem' }}
+          >
+            Run Simulations
+          </motion.button>
+
           {/* Advanced Options Toggle */}
           <button
             type="button"
@@ -162,6 +172,7 @@ function WelcomeScreen({ onStart }) {
               cursor: 'pointer',
               fontSize: '1rem',
               fontWeight: '600',
+              marginTop: '1rem',
               marginBottom: '1rem'
             }}
           >
@@ -252,19 +263,10 @@ function WelcomeScreen({ onStart }) {
               </p>
             </motion.div>
           )}
-
-          <motion.button
-            type="submit"
-            className="start-button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            🚀 Run Simulations
-          </motion.button>
         </form>
 
         <p style={{ fontSize: '0.9rem', marginTop: '1.5rem', opacity: 0.7 }}>
-          The simulation will run three configurations in parallel and compare their convergence behavior.
+          The simulations will run in parallel and compare their convergence behavior.
         </p>
       </motion.div>
     </motion.div>
