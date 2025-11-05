@@ -220,7 +220,7 @@ def main(hot_fraction=None, return_data=False):
     ap.add_argument("--ny", type=int, default=181, help="Grid points in y (rows).")
     ap.add_argument("--tol", type=float, default=1e-3, help="Convergence tolerance on delta.")
     ap.add_argument("--max-iters", type=int, default=20000, help="Safety cap on iterations.")
-    ap.add_argument("--output-every", type=int, default=50, help="Write VTK every N iterations.")
+    ap.add_argument("--output-every", type=int, default=20, help="Write VTK every N iterations.")
     ap.add_argument("--out", type=str, default="out_vtk", help="Output directory.")
     ap.add_argument("--also-csv", action="store_true", help="Write CSV snapshots too.")
     ap.add_argument("--gif", action="store_true", help="Generate animated GIF of temperature evolution.")

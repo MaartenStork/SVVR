@@ -110,11 +110,6 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
               </div>
             ))}
             
-            <p style={{ fontSize: '1rem', marginTop: '2rem', opacity: 0.8, lineHeight: '1.6' }}>
-              ⚡ All three simulations are running in parallel.<br/>
-              ⏱️ Default settings: ~1-2 minutes. High quality: ~3-10 minutes.<br/>
-              📊 Progress shows convergence (delta → tolerance). Updates 3x/second!
-            </p>
           </div>
 
           {/* Right: PDF Viewer */}
