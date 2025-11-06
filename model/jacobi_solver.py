@@ -92,8 +92,8 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     
     fig, ax = plt.subplots(figsize=(8, 7), dpi=dpi)
     
-    # Use coolwarm colormap to match ParaView's default "Cool to Warm" colormap
-    im = ax.imshow(T_array, origin='lower', cmap='coolwarm', vmin=vmin, vmax=vmax, 
+    # Use rainbow colormap to match ParaView (try: 'jet', 'turbo', 'rainbow', or 'gist_rainbow')
+    im = ax.imshow(T_array, origin='lower', cmap='turbo', vmin=vmin, vmax=vmax, 
                    aspect='equal', interpolation='bilinear')
     
     # Add colorbar
