@@ -19,7 +19,7 @@ def linspace(n: int, start: float, end: float) -> List[float]:
     step = (end - start) / (n - 1)
     return [start + i * step for i in range(n)]
 
-def write_legacy_vtk_structured_points(
+def write_vti_image_data(
     filename: str,
     grid: "list[list[float]]",
     dx: float,
@@ -28,40 +28,30 @@ def write_legacy_vtk_structured_points(
     name: str = "Temperature",
 ):
     """
-    Write a 2D scalar field as a VTK legacy STRUCTURED_POINTS dataset (ASCII).
-    ParaView will read this without extra Python packages.
-
-    Data ordering for STRUCTURED_POINTS is x fastest, then y, then z.
-    We have a single z-plane (NZ=1).
+    Write 2D scalar field as VTK-XML ImageData (.vti), ASCII.
     """
     ny = len(grid)
     nx = len(grid[0])
     nz = 1
-
+    # VTK-XML expects x fastest, then y, then z (same order you already write)
     with open(filename, "w") as f:
-        f.write("# vtk DataFile Version 3.0\n")
-        f.write("Steady-state temperature (Jacobi)\n")
-        f.write("ASCII\n")
-        f.write("DATASET STRUCTURED_POINTS\n")
-        f.write(f"DIMENSIONS {nx} {ny} {nz}\n")
-        f.write(f"ORIGIN {origin[0]} {origin[1]} {origin[2]}\n")
-        f.write(f"SPACING {dx} {dy} 1.0\n")
-        f.write(f"POINT_DATA {nx * ny * nz}\n")
-        f.write(f"SCALARS {name} float 1\n")
-        f.write("LOOKUP_TABLE default\n")
-
-        # VTK expects x varying fastest, then y
+        f.write('<?xml version="1.0"?>\n')
+        f.write('<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian">\n')
+        f.write(f'  <ImageData WholeExtent="0 {nx-1} 0 {ny-1} 0 {nz-1}" '
+                f'Origin="{origin[0]} {origin[1]} {origin[2]}" '
+                f'Spacing="{dx} {dy} 1">\n')
+        f.write(f'    <Piece Extent="0 {nx-1} 0 {ny-1} 0 {nz-1}">\n')
+        f.write(f'      <PointData Scalars="{name}">\n')
+        f.write(f'        <DataArray type="Float32" Name="{name}" format="ascii">\n')
         for j in range(ny):
             row = grid[j]
-            # Write numbers in chunks per line for readability
-            line = []
-            for i in range(nx):
-                line.append(f"{float(row[i]):.6f}")
-                if len(line) >= 8:
-                    f.write(" ".join(line) + "\n")
-                    line = []
-            if line:
-                f.write(" ".join(line) + "\n")
+            f.write(" ".join(f"{float(row[i]):.6f}" for i in range(nx)) + "\n")
+        f.write('        </DataArray>\n')
+        f.write('      </PointData>\n')
+        f.write('      <CellData/>\n')
+        f.write('    </Piece>\n')
+        f.write('  </ImageData>\n')
+        f.write('</VTKFile>\n')
 
 def write_pvd_collection(pvd_path: str, vtk_filenames: List[str], times: List[float]):
     """
@@ -102,8 +92,8 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     
     fig, ax = plt.subplots(figsize=(8, 7), dpi=dpi)
     
-    # Create a nice colormap matching the slides (blue to red gradient)
-    im = ax.imshow(T_array, origin='lower', cmap='turbo', vmin=vmin, vmax=vmax, 
+    # Use coolwarm colormap to match ParaView's default "Cool to Warm" colormap
+    im = ax.imshow(T_array, origin='lower', cmap='coolwarm', vmin=vmin, vmax=vmax, 
                    aspect='equal', interpolation='bilinear')
     
     # Add colorbar
@@ -257,9 +247,9 @@ def main(hot_fraction=None, return_data=False):
     step = 0
     
     if not args.no_vtk:
-        vtk0 = out_dir / f"step_{step:05d}.vtk"
-        write_legacy_vtk_structured_points(str(vtk0), T_old, dx, dy, name="Temperature")
-        vtk_paths.append(str(vtk0))
+        vti0 = out_dir / f"step_{step:05d}.vti"
+        write_vti_image_data(str(vti0), T_old, dx, dy, name="Temperature")
+        vtk_paths.append(str(vti0))
         times.append(float(step))
         if args.also_csv:
             write_csv_snapshot(str(out_dir / f"step_{step:05d}.csv"), T_old)
@@ -282,13 +272,13 @@ def main(hot_fraction=None, return_data=False):
         # Output cadence like the slides' "t=0,5,10,20,..."
         if step % args.output_every == 0 or delta <= args.tol:
             if not args.no_vtk:
-                vtk_path = out_dir / f"step_{step:05d}.vtk"
-                write_legacy_vtk_structured_points(str(vtk_path), T_old, dx, dy, name="Temperature")
-                vtk_paths.append(str(vtk_path))
+                vti_path = out_dir / f"step_{step:05d}.vti"
+                write_vti_image_data(str(vti_path), T_old, dx, dy, name="Temperature")
+                vtk_paths.append(str(vti_path))  # keep the list; it now holds .vti files
                 times.append(float(step))
                 if args.also_csv:
                     write_csv_snapshot(str(out_dir / f"step_{step:05d}.csv"), T_old)
-                print(f"[iter {step:6d}] delta={delta:.6e} -> wrote {vtk_path.name}")
+                print(f"[iter {step:6d}] delta={delta:.6e} -> wrote {vti_path.name}")
             else:
                 print(f"[iter {step:6d}] delta={delta:.6e}")
             if args.gif:
