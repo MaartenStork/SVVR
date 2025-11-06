@@ -95,9 +95,9 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     
     fig, ax = plt.subplots(figsize=(8, 7), dpi=dpi)
     
-    # Create desaturated rainbow colormap to match ParaView's softer rendering
-    base_cmap = plt.cm.rainbow
-    # Desaturate by blending with gray (reduces neon/fluorescent effect)
+    # Create desaturated jet colormap to match ParaView's smooth blue-to-red gradient
+    base_cmap = plt.cm.jet
+    # Desaturate by blending with gray (reduces harsh transitions)
     def desaturate_colormap(cmap, sat=0.7):
         colors = cmap(np.linspace(0, 1, 256))
         # Convert to HSV, reduce saturation, convert back
