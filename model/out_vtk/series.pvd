@@ -16,11 +16,7 @@
     <DataSet timestep="240.000000" file="step_00240.vti"/>
     <DataSet timestep="260.000000" file="step_00260.vti"/>
     <DataSet timestep="280.000000" file="step_00280.vti"/>
-    <DataSet timestep="300.000000" file="step_00300.vti"/>
-    <DataSet timestep="320.000000" file="step_00320.vti"/>
-    <DataSet timestep="340.000000" file="step_00340.vti"/>
-    <DataSet timestep="360.000000" file="step_00360.vti"/>
-    <DataSet timestep="380.000000" file="step_00380.vti"/>
+ visu
     <DataSet timestep="400.000000" file="step_00400.vti"/>
     <DataSet timestep="420.000000" file="step_00420.vti"/>
     <DataSet timestep="440.000000" file="step_00440.vti"/>
