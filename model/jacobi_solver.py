@@ -82,6 +82,7 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     Create a matplotlib figure of the temperature field and return it as an array.
     """
     import matplotlib
+    import matplotlib.colors as mcolors
     matplotlib.use('Agg')  # Use non-interactive backend
     
     ny = len(grid)
@@ -92,8 +93,23 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     
     fig, ax = plt.subplots(figsize=(8, 7), dpi=dpi)
     
-    # Use rainbow colormap to match ParaView (includes yellow/green warmth in mid-range)
-    im = ax.imshow(T_array, origin='lower', cmap='rainbow', vmin=vmin, vmax=vmax, 
+    # Create desaturated rainbow colormap to match ParaView's softer rendering
+    base_cmap = plt.cm.rainbow
+    # Desaturate by blending with gray (reduces neon/fluorescent effect)
+    def desaturate_colormap(cmap, sat=0.7):
+        colors = cmap(np.linspace(0, 1, 256))
+        # Convert to HSV, reduce saturation, convert back
+        h = colors[:, 0]
+        s = colors[:, 1] * sat  # Reduce saturation
+        v = colors[:, 2]
+        # For simplicity, just blend with gray
+        gray = 0.5
+        colors[:, :3] = colors[:, :3] * sat + gray * (1 - sat)
+        return mcolors.ListedColormap(colors)
+    
+    desaturated_rainbow = desaturate_colormap(base_cmap, sat=0.75)
+    
+    im = ax.imshow(T_array, origin='lower', cmap=desaturated_rainbow, vmin=vmin, vmax=vmax, 
                    aspect='equal', interpolation='bilinear')
     
     # Add colorbar
