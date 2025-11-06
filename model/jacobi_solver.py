@@ -1,24 +1,3 @@
-#!/usr/bin/env python3
-"""
-Steady-state 2D temperature (Laplace) with Jacobi updates — slide-faithful.
-
-Geometry (meters):
-- Plate: 9 m x 9 m
-- Hot square: 3 m x 3 m centered, fixed at 212°
-Boundary conditions:
-- Bottom edge: 32°
-- Top edge: 100°
-- Left & Right edges: linear ramp from 32° (bottom) to 100° (top)
-- Interior hot square: 212°, kept fixed every sweep
-
-Outputs:
-- Legacy VTK STRUCTURED_POINTS files: step_00000.vtk, step_00020.vtk, ...
-- A ParaView .pvd collection file to treat the steps as a time series
-- (Optional) CSV snapshots for quick inspection
-
-This matches the lecture slides' pseudocode and delta stopping rule.
-"""
-
 from __future__ import annotations
 import argparse
 import math
