@@ -77,9 +77,11 @@ def write_csv_snapshot(path: str, grid: "list[list[float]]"):
                 f.write(f"{i},{j},{grid[j][i]:.6f}\n")
 
 def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float, 
-                             vmin: float, vmax: float, dpi: int = 100) -> np.ndarray:
+                             vmin: float, vmax: float, dpi: int = 100, 
+                             extent: tuple = None) -> np.ndarray:
     """
     Create a matplotlib figure of the temperature field and return it as an array.
+    extent: (xmin, xmax, ymin, ymax) for physical dimensions
     """
     import matplotlib
     import matplotlib.colors as mcolors
@@ -109,8 +111,13 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     
     desaturated_rainbow = desaturate_colormap(base_cmap, sat=0.75)
     
-    im = ax.imshow(T_array, origin='lower', cmap=desaturated_rainbow, vmin=vmin, vmax=vmax, 
-                   aspect='equal', interpolation='bilinear')
+    # Use extent for physical dimensions if provided
+    if extent:
+        im = ax.imshow(T_array, origin='lower', cmap=desaturated_rainbow, vmin=vmin, vmax=vmax, 
+                       aspect='equal', interpolation='bilinear', extent=extent)
+    else:
+        im = ax.imshow(T_array, origin='lower', cmap=desaturated_rainbow, vmin=vmin, vmax=vmax, 
+                       aspect='equal', interpolation='bilinear')
     
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax, label='Temperature (°F)')
@@ -118,8 +125,14 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
     # Add title with iteration info
     ax.set_title(f'Temperature Field Evolution\nIteration: {step}, Delta: {delta:.2e}', 
                  fontsize=12, fontweight='bold')
-    ax.set_xlabel('X Position')
-    ax.set_ylabel('Y Position')
+    
+    # Set axis labels based on whether physical dimensions are provided
+    if extent:
+        ax.set_xlabel('X Position (meters)')
+        ax.set_ylabel('Y Position (meters)')
+    else:
+        ax.set_xlabel('X Position')
+        ax.set_ylabel('Y Position')
     
     # Convert figure to numpy array (using buffer_rgba for compatibility)
     fig.canvas.draw()
@@ -270,7 +283,9 @@ def main(hot_fraction=None, return_data=False):
         if args.also_csv:
             write_csv_snapshot(str(out_dir / f"step_{step:05d}.csv"), T_old)
     if args.gif:
-        frames.append(create_temperature_frame(T_old, step, 0.0, T_BOTTOM, T_HOT))
+        # Create extent for 9m x 9m physical dimensions
+        extent = (0, W, 0, H)
+        frames.append(create_temperature_frame(T_old, step, 0.0, T_BOTTOM, T_HOT, extent=extent))
 
     # Jacobi iteration loop (slide: do { ... } while (delta > tolerance))
     delta = float("inf")
@@ -298,7 +313,8 @@ def main(hot_fraction=None, return_data=False):
             else:
                 print(f"[iter {step:6d}] delta={delta:.6e}")
             if args.gif:
-                frames.append(create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT))
+                extent = (0, W, 0, H)
+                frames.append(create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, extent=extent))
 
     # PVD collection for ParaView time series
     if not args.no_vtk and len(vtk_paths) > 0:
