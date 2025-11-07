@@ -137,8 +137,9 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, 
     convergence_history = {"iterations": [], "deltas": []}
     frames = []
     
-    # Initial frame (lower DPI for memory efficiency)
-    frames.append(jacobi_sim.create_temperature_frame(T_old, 0, delta, T_BOTTOM, T_HOT, dpi=60))
+    # Initial frame (lower DPI for memory efficiency, always use 0-9m extent)
+    extent = (0, W, 0, H)
+    frames.append(jacobi_sim.create_temperature_frame(T_old, 0, delta, T_BOTTOM, T_HOT, dpi=60, extent=extent))
     
     print(f"Sim {sim_index}: Starting with {nx}x{ny} grid, hot_fraction={hot_fraction}")
     
@@ -162,7 +163,7 @@ def run_simulation_streaming(hot_fraction, sim_index, total_sims, grid_size=51, 
         if step % frame_every == 0 or delta <= tol:
             # Limit total frames to prevent memory issues
             if len(frames) < 100:  # Cap at 100 frames max
-                frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60))
+                frames.append(jacobi_sim.create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, dpi=60, extent=extent))
             
             # Calculate progress based on convergence (logarithmic scale for exponential decay)
             if initial_delta and initial_delta > tol and delta > tol:
@@ -272,51 +273,35 @@ def handle_start_simulation(data):
             result = run_simulation_streaming(fraction, idx, len(hot_fractions), 
                                              grid_size, tolerance, max_iters, frame_every)
             
+            # Generate GIF immediately when simulation completes
+            print(f"Sim {idx} complete, generating GIF with {len(result['frames'])} frames")
+            gif_bytes = generate_gif(result['frames'], fps=5)
+            result['gif_data'] = f"data:image/gif;base64,{base64.b64encode(gif_bytes).decode()}"
+            del result['frames']  # Free memory
+            
             with lock:
                 results[idx] = result
-                # Check if all simulations are done
+            
+            # Send THIS result immediately (no waiting for others)
+            socketio.emit('simulation_complete', {
+                'index': idx,
+                'result': {
+                    'hot_fraction': result['hot_fraction'],
+                    'final_iter': result['final_iter'],
+                    'final_delta': result['final_delta'],
+                    'gif_data': result['gif_data'],
+                    'convergence_history': result['convergence_history']
+                }
+            }, namespace='/')
+            print(f"Sim {idx} result sent to client immediately")
+            
+            # Check if all are done
+            with lock:
                 if all(r is not None for r in results):
-                    # Synchronize GIF lengths - pad shorter ones with last frame
-                    max_frames = max(len(r['frames']) for r in results)
-                    print(f"Synchronizing GIFs to {max_frames} frames each")
-                    
-                    for r in results:
-                        frames_needed = max_frames - len(r['frames'])
-                        if frames_needed > 0:
-                            print(f"  Sim {results.index(r)}: Adding {frames_needed} frames (was {len(r['frames'])})")
-                            # Add frames BEFORE and AFTER for smooth looping
-                            padding_start = frames_needed // 2
-                            padding_end = frames_needed - padding_start
-                            # Pad start with first frame
-                            r['frames'] = [r['frames'][0]] * padding_start + r['frames']
-                            # Pad end with last frame
-                            r['frames'] = r['frames'] + [r['frames'][-1]] * padding_end
-                    
-                    # Generate synchronized GIFs with EXACT same settings
-                    duration_ms = 200  # 200ms per frame = 5 FPS
-                    for i, r in enumerate(results):
-                        print(f"  Generating GIF for Sim {i}: {len(r['frames'])} frames @ {duration_ms}ms/frame")
-                        gif_bytes = generate_gif(r['frames'], fps=5)
-                        r['gif_data'] = f"data:image/gif;base64,{base64.b64encode(gif_bytes).decode()}"
-                        del r['frames']  # Free memory
-                    
-                    print(f"All GIFs generated with {max_frames} frames each")
-                    
                     simulation_state['results'] = results
                     simulation_state['running'] = False
+                    print("All simulations complete!")
                     
-                    # Send ALL results at once!
-                    socketio.emit('all_simulations_complete', {
-                        'message': 'All simulations completed!',
-                        'results': [{
-                            'hot_fraction': r['hot_fraction'],
-                            'final_iter': r['final_iter'],
-                            'final_delta': r['final_delta'],
-                            'gif_data': r['gif_data'],
-                            'convergence_history': r['convergence_history']
-                        } for r in results]
-                    }, namespace='/')
-                    print("All simulations complete! Synchronized GIFs sent to client.")
         except Exception as e:
             simulation_state['running'] = False
             socketio.emit('error', {'message': str(e)}, namespace='/')

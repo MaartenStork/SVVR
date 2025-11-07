@@ -60,11 +60,20 @@ function App() {
       }
     });
 
+    // Handle individual simulation completion (as they finish)
+    newSocket.on('simulation_complete', (data) => {
+      console.log(`✓ Simulation ${data.index} complete!`, data.result);
+      setResults(prevResults => {
+        const newResults = prevResults ? [...prevResults] : [];
+        newResults[data.index] = data.result;
+        return newResults;
+      });
+    });
+
     newSocket.on('all_simulations_complete', (data) => {
       console.log('All simulations complete!', data.results);
       setIsRunning(false);
       setStatusMessage('All simulations completed!');
-      setResults(data.results);
     });
 
     newSocket.on('error', (data) => {

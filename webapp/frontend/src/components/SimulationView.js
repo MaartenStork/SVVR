@@ -197,29 +197,35 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={600}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                   <XAxis 
                     dataKey="iteration" 
-                    label={{ value: 'Iteration', position: 'insideBottom', offset: -5 }}
+                    label={{ value: 'Iteration', position: 'insideBottom', offset: -5, style: { fontSize: 14, fontWeight: 'bold' } }}
+                    tick={{ fill: '#fff' }}
                   />
                   <YAxis 
                     scale="log"
-                    domain={['auto', 'auto']}
-                    label={{ value: 'Delta (log scale)', angle: -90, position: 'insideLeft' }}
+                    domain={[0.0001, 'auto']}
+                    label={{ value: 'Max Change δ (log scale)', angle: -90, position: 'insideLeft', style: { fontSize: 14, fontWeight: 'bold' } }}
+                    tick={{ fill: '#fff' }}
                   />
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px' }}
+                    contentStyle={{ background: 'rgba(30, 30, 50, 0.95)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)' }}
                     formatter={(value) => value?.toExponential(2)}
+                    labelFormatter={(label) => `Iteration: ${label}`}
                   />
-                  <Legend />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }}
+                    iconType="line"
+                  />
                   {results.map((result, index) => (
                     <Line
                       key={index}
                       type="monotone"
                       dataKey={`sim${index}`}
-                      name={`Size ${result.hot_fraction.toFixed(2)}`}
+                      name={`f=${result.hot_fraction.toFixed(2)}`}
                       stroke={colors[index % colors.length]}
-                      strokeWidth={3}
+                      strokeWidth={2}
                       dot={false}
                       isAnimationActive={true}
                     />
