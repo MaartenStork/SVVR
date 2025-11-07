@@ -2,6 +2,10 @@
 
 This repository contains two assignments related to numerical methods and visualization. Assignment 1 is in a separate folder, while the rest is assignment 2. Structure like this due to hosting a webservice on assignment 2.
 
+<p align="center">
+  <img src="GeneralPlots/ParaViewGIF.gif" alt="ParaView Visualization" width="500"/>
+</p>
+
 ## Project Structure
 
 ```
