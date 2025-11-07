@@ -201,17 +201,19 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={600}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.3)" />
                   <XAxis 
                     dataKey="iteration" 
-                    label={{ value: 'Iteration', position: 'insideBottom', offset: -5, style: { fontSize: 14, fontWeight: 'bold' } }}
-                    tick={{ fill: '#fff' }}
+                    label={{ value: 'Iteration', position: 'insideBottom', offset: -5, style: { fontSize: 14, fontWeight: 'bold', fill: '#fff' } }}
+                    tick={{ fill: '#fff', fontSize: 12 }}
+                    tickFormatter={(value) => value.toLocaleString()}
                   />
                   <YAxis 
                     scale="log"
-                    domain={[0.0001, 'auto']}
-                    label={{ value: 'Max Change δ (log scale)', angle: -90, position: 'insideLeft', style: { fontSize: 14, fontWeight: 'bold' } }}
-                    tick={{ fill: '#fff' }}
+                    domain={['auto', 'auto']}
+                    label={{ value: 'Max Change δ (log scale)', angle: -90, position: 'insideLeft', style: { fontSize: 14, fontWeight: 'bold', fill: '#fff' } }}
+                    tick={{ fill: '#fff', fontSize: 12 }}
+                    tickFormatter={(value) => value.toExponential(0)}
                   />
                   <Tooltip 
                     contentStyle={{ background: 'rgba(30, 30, 50, 0.95)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)' }}
