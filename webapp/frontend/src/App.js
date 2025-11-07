@@ -70,6 +70,13 @@ function App() {
       });
     });
 
+    // Handle when ALL simulations are complete
+    newSocket.on('all_complete', (data) => {
+      console.log('✅ ALL SIMULATIONS COMPLETE!', data);
+      setIsRunning(false);
+      setStatusMessage(`All ${data.total} simulations completed!`);
+    });
+
     newSocket.on('all_simulations_complete', (data) => {
       console.log('All simulations complete!', data.results);
       setIsRunning(false);

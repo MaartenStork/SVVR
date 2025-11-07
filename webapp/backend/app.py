@@ -302,6 +302,12 @@ def handle_start_simulation(data):
                     simulation_state['running'] = False
                     print("All simulations complete!")
                     
+                    # Explicitly notify frontend that everything is done
+                    socketio.emit('all_complete', {
+                        'message': 'All simulations finished!',
+                        'total': len(results)
+                    }, namespace='/')
+                    
         except Exception as e:
             simulation_state['running'] = False
             socketio.emit('error', {'message': str(e)}, namespace='/')
