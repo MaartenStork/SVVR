@@ -70,7 +70,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
           {/* Left: Progress Bars */}
           <div>
             <h2 style={{ fontSize: '1.8rem', marginBottom: '2rem' }}>
-              🔄 Running Simulations
+              Running Simulations
             </h2>
             
             {progress.map((prog, idx) => (
@@ -124,7 +124,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             backdropFilter: 'blur(10px)'
           }}>
             <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>
-              📄 Read My Research Report
+              Read My Research Report
             </h2>
             <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem', opacity: 0.9 }}>
               While you wait, learn about the research question:
@@ -201,18 +201,30 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={600}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.3)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#999" strokeWidth={1} />
                   <XAxis 
                     dataKey="iteration" 
-                    label={{ value: 'Iteration', position: 'insideBottom', offset: -5, style: { fontSize: 14, fontWeight: 'bold', fill: '#fff' } }}
-                    tick={{ fill: '#fff', fontSize: 12 }}
+                    stroke="#fff"
+                    label={{ 
+                      value: 'Iteration', 
+                      position: 'insideBottom', 
+                      offset: -5, 
+                      style: { fontSize: 16, fontWeight: 'bold', fill: '#fff' } 
+                    }}
+                    tick={{ fill: '#fff', fontSize: 14 }}
                     tickFormatter={(value) => value.toLocaleString()}
                   />
                   <YAxis 
                     scale="log"
                     domain={['auto', 'auto']}
-                    label={{ value: 'Max Change δ (log scale)', angle: -90, position: 'insideLeft', style: { fontSize: 14, fontWeight: 'bold', fill: '#fff' } }}
-                    tick={{ fill: '#fff', fontSize: 12 }}
+                    stroke="#fff"
+                    label={{ 
+                      value: 'Max Change δ (log scale)', 
+                      angle: -90, 
+                      position: 'insideLeft', 
+                      style: { fontSize: 16, fontWeight: 'bold', fill: '#fff' } 
+                    }}
+                    tick={{ fill: '#fff', fontSize: 14 }}
                     tickFormatter={(value) => value.toExponential(0)}
                   />
                   <Tooltip 
@@ -239,30 +251,6 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                 </LineChart>
               </ResponsiveContainer>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ 
-                marginTop: '1.5rem', 
-                padding: '1.5rem', 
-                background: 'rgba(74, 222, 128, 0.2)',
-                borderRadius: '10px',
-                border: '2px solid rgba(74, 222, 128, 0.5)'
-              }}
-            >
-              <h3 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>
-                🔬 Research Finding:
-              </h3>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                <strong>Larger hot squares converge FASTER!</strong>
-              </p>
-              {results.map((result, index) => result ? (
-                <div key={index} style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
-                  <strong>Size {result.hot_fraction.toFixed(2)}:</strong> {result.final_iter} iterations
-                </div>
-              ) : null)}
-            </motion.div>
           </motion.div>
         </div>
       ) : null}
