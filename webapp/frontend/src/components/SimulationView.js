@@ -204,26 +204,26 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                   data={chartData}
                   margin={{ top: 20, right: 30, left: 60, bottom: 40 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" strokeWidth={0.5} />
                   <XAxis 
                     dataKey="iteration" 
                     stroke="#000"
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                     label={{ 
                       value: 'Iteration', 
                       position: 'insideBottom', 
                       offset: -10, 
                       style: { fontSize: 18, fontWeight: 'bold', fill: '#000' } 
                     }}
-                    tick={{ fill: '#000', fontSize: 16 }}
-                    tickFormatter={(value) => value.toLocaleString()}
+                    tick={{ fill: '#000', fontSize: 14 }}
                     tickLine={{ stroke: '#000' }}
+                    type="number"
                   />
                   <YAxis 
                     scale="log"
                     domain={['auto', 'auto']}
                     stroke="#000"
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                     label={{ 
                       value: 'Max Change δ (log scale)', 
                       angle: -90, 
@@ -231,12 +231,22 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                       offset: 10,
                       style: { fontSize: 18, fontWeight: 'bold', fill: '#000' } 
                     }}
-                    tick={{ fill: '#000', fontSize: 16 }}
-                    tickFormatter={(value) => value.toExponential(0)}
+                    tick={{ fill: '#000', fontSize: 14 }}
+                    tickFormatter={(value) => {
+                      const exponent = Math.round(Math.log10(value));
+                      const superscripts = {
+                        '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+                        '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+                        '-': '⁻'
+                      };
+                      const expStr = String(exponent);
+                      const superscript = expStr.split('').map(c => superscripts[c] || c).join('');
+                      return `10${superscript}`;
+                    }}
                     tickLine={{ stroke: '#000' }}
                   />
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: '2px solid #000' }}
+                    contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: '1px solid #ccc' }}
                     formatter={(value) => value?.toExponential(2)}
                     labelFormatter={(label) => `Iteration: ${label}`}
                   />
@@ -251,7 +261,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                       dataKey={`sim${index}`}
                       name={`f=${result.hot_fraction.toFixed(2)}`}
                       stroke={colors[index % colors.length]}
-                      strokeWidth={3}
+                      strokeWidth={2}
                       dot={false}
                       isAnimationActive={true}
                     />
