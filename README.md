@@ -4,6 +4,8 @@ This repository contains two assignments related to numerical methods and visual
 
 <p align="center">
   <img src="GeneralPlots/ParaViewGIF.gif" alt="ParaView Visualization" width="500"/>
+  <br>
+  <em>2D steady-state temperature distribution solved using Jacobi iteration method</em>
 </p>
 
 ## Project Structure
