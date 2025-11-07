@@ -201,34 +201,34 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={600}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#999" strokeWidth={1} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" strokeWidth={1} />
                   <XAxis 
                     dataKey="iteration" 
-                    stroke="#fff"
+                    stroke="#333"
                     label={{ 
                       value: 'Iteration', 
                       position: 'insideBottom', 
                       offset: -5, 
-                      style: { fontSize: 16, fontWeight: 'bold', fill: '#fff' } 
+                      style: { fontSize: 16, fontWeight: 'bold', fill: '#333' } 
                     }}
-                    tick={{ fill: '#fff', fontSize: 14 }}
+                    tick={{ fill: '#333', fontSize: 14 }}
                     tickFormatter={(value) => value.toLocaleString()}
                   />
                   <YAxis 
                     scale="log"
                     domain={['auto', 'auto']}
-                    stroke="#fff"
+                    stroke="#333"
                     label={{ 
                       value: 'Max Change δ (log scale)', 
                       angle: -90, 
                       position: 'insideLeft', 
-                      style: { fontSize: 16, fontWeight: 'bold', fill: '#fff' } 
+                      style: { fontSize: 16, fontWeight: 'bold', fill: '#333' } 
                     }}
-                    tick={{ fill: '#fff', fontSize: 14 }}
+                    tick={{ fill: '#333', fontSize: 14 }}
                     tickFormatter={(value) => value.toExponential(0)}
                   />
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(30, 30, 50, 0.95)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)' }}
+                    contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: '1px solid #ccc' }}
                     formatter={(value) => value?.toExponential(2)}
                     labelFormatter={(label) => `Iteration: ${label}`}
                   />
