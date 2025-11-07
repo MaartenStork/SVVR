@@ -117,7 +117,7 @@ def create_temperature_frame(grid: "list[list[float]]", step: int, delta: float,
                        aspect='equal', interpolation='bilinear', extent=extent)
     else:
         im = ax.imshow(T_array, origin='lower', cmap=desaturated_rainbow, vmin=vmin, vmax=vmax, 
-                       aspect='equal', interpolation='bilinear')
+                   aspect='equal', interpolation='bilinear')
     
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax, label='Temperature (°F)')
@@ -223,7 +223,6 @@ def main(hot_fraction=None, return_data=False):
     ap.add_argument("--also-csv", action="store_true", help="Write CSV snapshots too.")
     ap.add_argument("--gif", action="store_true", help="Generate animated GIF of temperature evolution.")
     ap.add_argument("--gif-fps", type=int, default=10, help="Frames per second for GIF.")
-    ap.add_argument("--snapshots", action="store_true", help="Save 3 snapshots: beginning, middle, end.")
     ap.add_argument("--hot-fraction", type=float, default=1/3.0, help="Hot square size as fraction of domain (default: 1/3)")
     ap.add_argument("--no-vtk", action="store_true", help="Skip VTK file writing (for webapp use)")
     args = ap.parse_args()
@@ -291,8 +290,6 @@ def main(hot_fraction=None, return_data=False):
     # Jacobi iteration loop (slide: do { ... } while (delta > tolerance))
     delta = float("inf")
     convergence_history = {"iterations": [], "deltas": []}
-    saved_snapshots = []  # Store (step, T_old_copy, delta) for snapshots
-    estimated_middle = args.max_iters // 3  # Rough estimate for middle
     
     while delta > args.tol and step < args.max_iters:
         delta = jacobi_step(T_old, T_new, fixed)
@@ -302,19 +299,6 @@ def main(hot_fraction=None, return_data=False):
         # Track convergence history
         convergence_history["iterations"].append(step)
         convergence_history["deltas"].append(delta)
-        
-        # Save snapshots at specific iterations if requested
-        if args.snapshots:
-            # Save at iteration 200
-            if step == 200:
-                import copy
-                saved_snapshots.append((step, copy.deepcopy(T_old), delta))
-                print(f"[SNAPSHOT 1/3] Saved iteration {step}")
-            # Save at estimated middle (rough guess)
-            elif step == estimated_middle and len(saved_snapshots) == 1:
-                import copy
-                saved_snapshots.append((step, copy.deepcopy(T_old), delta))
-                print(f"[SNAPSHOT 2/3] Saved iteration {step} (estimated middle)")
 
         # Output cadence like the slides' "t=0,5,10,20,..."
         if step % args.output_every == 0 or delta <= args.tol:
@@ -331,62 +315,6 @@ def main(hot_fraction=None, return_data=False):
             if args.gif:
                 extent = (0, W, 0, H)
                 frames.append(create_temperature_frame(T_old, step, delta, T_BOTTOM, T_HOT, extent=extent))
-    
-    # Save final snapshot if requested
-    if args.snapshots:
-        import copy
-        saved_snapshots.append((step, copy.deepcopy(T_old), delta))
-        print(f"[SNAPSHOT 3/3] Saved iteration {step} (final)")
-        
-        # Save all snapshots as PNG files
-        print(f"\nSaving {len(saved_snapshots)} snapshot(s) to PNG...")
-        extent = (0, W, 0, H)
-        for snap_step, snap_grid, snap_delta in saved_snapshots:
-            frame = create_temperature_frame(snap_grid, snap_step, snap_delta, T_BOTTOM, T_HOT, extent=extent)
-            from PIL import Image
-            img = Image.fromarray(frame)
-            snapshot_path = out_dir / f"snapshot_iter_{snap_step:05d}.png"
-            img.save(str(snapshot_path), dpi=(300, 300))
-            print(f"  ✓ {snapshot_path}")
-        
-        # Create combined side-by-side visualization
-        print(f"\nCreating combined side-by-side visualization...")
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-        
-        # Create desaturated jet colormap
-        import matplotlib.colors as mcolors
-        base_cmap = plt.cm.jet
-        def desaturate_colormap(cmap, sat=0.75):
-            colors = cmap(np.linspace(0, 1, 256))
-            gray = 0.5
-            colors[:, :3] = colors[:, :3] * sat + gray * (1 - sat)
-            return mcolors.ListedColormap(colors)
-        desaturated_jet = desaturate_colormap(base_cmap)
-        
-        for idx, (snap_step, snap_grid, snap_delta) in enumerate(saved_snapshots):
-            T_array = np.array(snap_grid)
-            im = axes[idx].imshow(T_array, origin='lower', cmap=desaturated_jet, 
-                                 vmin=T_BOTTOM, vmax=T_HOT, aspect='equal', 
-                                 interpolation='bilinear', extent=(0, W, 0, H))
-            axes[idx].set_title(f'Iteration: {snap_step}', fontsize=14, fontweight='bold')
-            axes[idx].set_xlabel('X (m)', fontsize=12)
-            if idx == 0:
-                axes[idx].set_ylabel('Y (m)', fontsize=12)
-            else:
-                axes[idx].set_ylabel('')
-        
-        # Add single colorbar on the right
-        # Match ParaView spacing - more space between plots and between plot/colorbar
-        fig.subplots_adjust(left=0.05, right=0.88, wspace=0.4)
-        # Make colorbar taller than plots (extends above and below)
-        cbar_ax = fig.add_axes([0.91, 0.10, 0.015, 0.80])
-        cbar = fig.colorbar(im, cax=cbar_ax, label='Temperature (°F)')
-        
-        # Save combined figure
-        combined_path = out_dir / "snapshots_combined.png"
-        plt.savefig(str(combined_path), dpi=300, bbox_inches='tight')
-        plt.close(fig)
-        print(f"  ✓ {combined_path}")
 
     # PVD collection for ParaView time series
     if not args.no_vtk and len(vtk_paths) > 0:
