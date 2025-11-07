@@ -200,35 +200,43 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={600}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ccc" strokeWidth={1} />
+                <LineChart 
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 60, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#000" strokeWidth={1.5} />
                   <XAxis 
                     dataKey="iteration" 
-                    stroke="#333"
+                    stroke="#000"
+                    strokeWidth={2}
                     label={{ 
                       value: 'Iteration', 
                       position: 'insideBottom', 
-                      offset: -5, 
-                      style: { fontSize: 16, fontWeight: 'bold', fill: '#333' } 
+                      offset: -10, 
+                      style: { fontSize: 18, fontWeight: 'bold', fill: '#000' } 
                     }}
-                    tick={{ fill: '#333', fontSize: 14 }}
+                    tick={{ fill: '#000', fontSize: 16 }}
                     tickFormatter={(value) => value.toLocaleString()}
+                    tickLine={{ stroke: '#000' }}
                   />
                   <YAxis 
                     scale="log"
                     domain={['auto', 'auto']}
-                    stroke="#333"
+                    stroke="#000"
+                    strokeWidth={2}
                     label={{ 
                       value: 'Max Change δ (log scale)', 
                       angle: -90, 
                       position: 'insideLeft', 
-                      style: { fontSize: 16, fontWeight: 'bold', fill: '#333' } 
+                      offset: 10,
+                      style: { fontSize: 18, fontWeight: 'bold', fill: '#000' } 
                     }}
-                    tick={{ fill: '#333', fontSize: 14 }}
+                    tick={{ fill: '#000', fontSize: 16 }}
                     tickFormatter={(value) => value.toExponential(0)}
+                    tickLine={{ stroke: '#000' }}
                   />
                   <Tooltip 
-                    contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: '1px solid #ccc' }}
+                    contentStyle={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: '2px solid #000' }}
                     formatter={(value) => value?.toExponential(2)}
                     labelFormatter={(label) => `Iteration: ${label}`}
                   />
@@ -243,7 +251,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                       dataKey={`sim${index}`}
                       name={`f=${result.hot_fraction.toFixed(2)}`}
                       stroke={colors[index % colors.length]}
-                      strokeWidth={2}
+                      strokeWidth={3}
                       dot={false}
                       isAnimationActive={true}
                     />
