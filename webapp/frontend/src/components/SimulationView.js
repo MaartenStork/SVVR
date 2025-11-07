@@ -7,13 +7,17 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
   const prepareChartData = () => {
     if (!results) return [];
     
-    const maxLength = Math.max(...results.map(r => r.convergence_history.iterations.length));
+    // Filter out undefined/null results (not completed yet)
+    const completedResults = results.filter(r => r && r.convergence_history);
+    if (completedResults.length === 0) return [];
+    
+    const maxLength = Math.max(...completedResults.map(r => r.convergence_history.iterations.length));
     
     const chartData = [];
     for (let i = 0; i < maxLength; i++) {
       const dataPoint = { index: i };
       results.forEach((result, simIndex) => {
-        if (result.convergence_history.iterations[i]) {
+        if (result && result.convergence_history && result.convergence_history.iterations[i]) {
           dataPoint[`sim${simIndex}`] = result.convergence_history.deltas[i];
           dataPoint.iteration = result.convergence_history.iterations[i];
         }
@@ -144,7 +148,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
         <div className="simulation-content">
           {/* Left Panel: GIF Simulations */}
           <div className="simulations-panel">
-            {results.map((result, index) => (
+            {results.map((result, index) => result ? (
               <motion.div
                 key={index}
                 className="simulation-card"
@@ -182,7 +186,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                   }}
                 />
               </motion.div>
-            ))}
+            ) : null)}
           </div>
 
           {/* Right Panel: Convergence Plot */}
@@ -218,7 +222,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                     wrapperStyle={{ paddingTop: '20px' }}
                     iconType="line"
                   />
-                  {results.map((result, index) => (
+                  {results.map((result, index) => result ? (
                     <Line
                       key={index}
                       type="monotone"
@@ -229,7 +233,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
                       dot={false}
                       isAnimationActive={true}
                     />
-                  ))}
+                  ) : null)}
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -251,11 +255,11 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
               <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
                 <strong>Larger hot squares converge FASTER!</strong>
               </p>
-              {results.map((result, index) => (
+              {results.map((result, index) => result ? (
                 <div key={index} style={{ marginTop: '0.5rem', fontSize: '1rem' }}>
                   <strong>Size {result.hot_fraction.toFixed(2)}:</strong> {result.final_iter} iterations
                 </div>
-              ))}
+              ) : null)}
             </motion.div>
           </motion.div>
         </div>
