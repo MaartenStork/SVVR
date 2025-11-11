@@ -254,6 +254,18 @@ function WelcomeScreen({ onStart }) {
                     onChange={(e) => setFrameEvery(e.target.value)}
                   />
                   <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>More frames = smoother GIF</span>
+                  {frameEvery < 15 && (
+                    <span style={{ 
+                      fontSize: '0.8rem', 
+                      opacity: 0.9, 
+                      color: '#fbbf24',
+                      display: 'block',
+                      marginTop: '0.3rem',
+                      fontWeight: '600'
+                    }}>
+                      ⚠️ GIFs are capped at 100 frames for web performance—may not show full convergence
+                    </span>
+                  )}
                 </div>
               </div>
               
