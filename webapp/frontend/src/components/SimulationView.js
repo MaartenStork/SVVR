@@ -128,7 +128,7 @@ function SimulationView({ results, isRunning, statusMessage, progress, onReset }
             </h2>
             <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem', opacity: 0.9 }}>
               While you wait, learn about the research question:
-              <br/><strong>"Does hot-square size affect solve difficulty?"</strong>
+              <br/><strong>"How does the size of the central hot square affect the number of iterations a Jacobi solver needs to reach a given tolerance?"</strong>
             </p>
             
             <iframe 
